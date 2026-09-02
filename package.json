@@ -1,0 +1,27 @@
+{
+  "name": "mmm-mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Matryoshka Mind Map の自分のデータをClaudeから直接読み書きするMCPサーバー",
+  "type": "module",
+  "bin": {
+    "mmm-login": "dist/bin/login.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/src/server.js",
+    "login": "node dist/bin/login.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "open": "^10.1.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
