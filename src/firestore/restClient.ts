@@ -3,6 +3,7 @@ import { FIREBASE_PROJECT_ID } from "../firebaseConfig.js";
 import {
   decodeFields,
   encodeFields,
+  encodeValue,
   lastPathSegment,
   type FirestoreValue,
 } from "./valueCodec.js";
@@ -41,14 +42,21 @@ async function parseJsonResponse(res: Response): Promise<any> {
 /** Firestoreの1コミット(:commit)に含められる書き込み件数の上限(500)より余裕を持たせた値。 */
 const COMMIT_CHUNK_SIZE = 400;
 
-/** 書き込み系3ツールで使う、連結リストの1件分の更新指示。 */
+/** 書き込み系ツールで使う、1件分の更新指示。 */
 export interface FirestoreWrite {
   /** ドキュメントの完全パス(例: "users/uid/headers/hid/bodies/bid")。 */
   path: string;
-  /** このフィールドだけを部分更新する。deleteがtrueのときは無視される。 */
+  /** このフィールドだけを部分更新する。delete/arrayUnionが指定されているときは無視される。 */
   fields?: Record<string, unknown>;
-  /** trueならこのドキュメントを削除する(fieldsは無視)。 */
+  /** trueならこのドキュメントを削除する(fields/arrayUnionは無視)。 */
   delete?: boolean;
+  /**
+   * levels移行: 既存ドキュメントの配列フィールドの末尾に、読み取りを介さず
+   * 追記する(Firestoreネイティブのarray-union transform)。ドキュメントが
+   * 存在しないと失敗するため、既存が確実にある場合にのみ使うこと
+   * (無ければfieldsで新規作成する側を使う)。
+   */
+  arrayUnion?: { field: string; values: unknown[] };
 }
 
 export class FirestoreRestClient {
@@ -173,6 +181,19 @@ export class FirestoreRestClient {
         const name = `projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/${w.path}`;
         if (w.delete) {
           return { delete: name };
+        }
+        if (w.arrayUnion) {
+          return {
+            transform: {
+              document: name,
+              fieldTransforms: [
+                {
+                  fieldPath: w.arrayUnion.field,
+                  appendMissingElements: { values: w.arrayUnion.values.map(encodeValue) },
+                },
+              ],
+            },
+          };
         }
         const fields = w.fields ?? {};
         return {

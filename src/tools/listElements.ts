@@ -1,8 +1,13 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getContext } from "../mcpContext.js";
-import { resolveMap, bodiesPathOf } from "../domain/mapResolver.js";
-import { bodyFromFirestore, buildTree, type ElementNode } from "../domain/body.js";
+import { resolveMap, levelsPathOf } from "../domain/mapResolver.js";
+import {
+  assertLevelsInitialized,
+  buildTreeFromLevels,
+  readAllLevelDocs,
+  type ElementNode,
+} from "../domain/levels.js";
 
 // ElementNodeの`done`を`checked`という名前で公開する(仕様書の用語に合わせる)。
 function toChecked(nodes: ElementNode[]): unknown[] {
@@ -63,6 +68,11 @@ export function registerListElements(server: McpServer): void {
       const { client, session } = getContext();
       const map = await resolveMap(client, session, mapId);
 
+      // 未確認のマップでは、確認を促す文面だけを返して終える。levelsの
+      // 実データはこのゲートを通過するまで一切読みに行かない
+      // (以前はlevels/rootの存在確認のために先に読んでしまっていたが、
+      // 「実際の要素を返す前に必ず本人の明示的な許可を得る」という設計
+      // 意図に反するため、確認ゲートの後に読む順序へ戻した)。
       if (!confirmedMapIds.has(mapId)) {
         if (confirmed === true) {
           confirmedMapIds.add(mapId);
@@ -71,9 +81,9 @@ export function registerListElements(server: McpServer): void {
         }
       }
 
-      const docs = await client.listDocuments(bodiesPathOf(map));
-      const bodies = docs.map((d) => bodyFromFirestore(d.id, d.data));
-      const tree = buildTree(bodies);
+      const levelsById = await readAllLevelDocs(client, levelsPathOf(map));
+      assertLevelsInitialized(levelsById, map.header.title);
+      const tree = buildTreeFromLevels(levelsById);
 
       return {
         content: [

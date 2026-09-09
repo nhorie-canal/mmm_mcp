@@ -1,9 +1,16 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getContext } from "../mcpContext.js";
-import { resolveMap, bodiesPathOf, formatPath, assertCanEditMap } from "../domain/mapResolver.js";
+import {
+  resolveMap,
+  bodiesPathOf,
+  levelsPathOf,
+  formatPath,
+  assertCanEditMap,
+} from "../domain/mapResolver.js";
 import { bodyFromFirestore, ancestorDetails } from "../domain/body.js";
 import { buildForestFromTree, buildAppendWrites, type TreeInputNode } from "../domain/appendForest.js";
+import { assertLevelsRootExists, buildAppendLevelWrites, levelsDocExists } from "../domain/levels.js";
 
 const treeNodeSchema: z.ZodType<TreeInputNode> = z.lazy(() =>
   z.object({
@@ -33,6 +40,8 @@ export function registerAutoStructureThought(server: McpServer): void {
       const { client, session } = getContext();
       const map = await resolveMap(client, session, mapId);
       assertCanEditMap(map, session);
+      const levelsPath = levelsPathOf(map);
+      assertLevelsRootExists(await levelsDocExists(client, levelsPath, "root"), map.header.title);
       const bodiesPath = bodiesPathOf(map);
 
       const existingDocs = await client.listDocuments(bodiesPath);
@@ -52,7 +61,20 @@ export function registerAutoStructureThought(server: McpServer): void {
         targetParentId,
         map.header.isTodo
       );
-      await client.commitWrites(writes);
+      // 挿入先のlevelsドキュメントが実際に存在するかを直接確認する
+      // (bodies側の状態から推測すると、levelsとbodiesが食い違っている
+      // 場合にarrayUnion書き込みが「ドキュメントが無い」で失敗しうるため)。
+      const targetLevelId = targetParentId ?? "root";
+      const targetHasLevelsDoc =
+        targetLevelId === "root" || (await levelsDocExists(client, levelsPath, targetLevelId));
+      const levelWrites = buildAppendLevelWrites(
+        levelsPath,
+        forest,
+        targetParentId,
+        targetHasLevelsDoc,
+        map.header.isTodo
+      );
+      await client.commitWrites([...writes, ...levelWrites]);
 
       const path = formatPath(map.header.title, ancestorDetails(existingBodies, targetParentId));
       return {

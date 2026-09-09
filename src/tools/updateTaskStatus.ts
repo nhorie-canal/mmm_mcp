@@ -1,9 +1,16 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getContext } from "../mcpContext.js";
-import { resolveMap, bodiesPathOf, formatPath, assertCanEditMap } from "../domain/mapResolver.js";
+import {
+  resolveMap,
+  bodiesPathOf,
+  levelsPathOf,
+  formatPath,
+  assertCanEditMap,
+} from "../domain/mapResolver.js";
 import { bodyFromFirestore, ancestorDetails } from "../domain/body.js";
 import type { FirestoreWrite } from "../firestore/restClient.js";
+import { assertLevelsRootExists, buildUpdateEntryWrites, levelsDocExists } from "../domain/levels.js";
 
 export function registerUpdateTaskStatus(server: McpServer): void {
   server.tool(
@@ -32,6 +39,8 @@ export function registerUpdateTaskStatus(server: McpServer): void {
           `「${map.header.title}」はTODOマップではないため、チェック状態を持ちません。`
         );
       }
+      const levelsPath = levelsPathOf(map);
+      assertLevelsRootExists(await levelsDocExists(client, levelsPath, "root"), map.header.title);
       const bodiesPath = bodiesPathOf(map);
 
       const existingDocs = await client.listDocuments(bodiesPath);
@@ -39,6 +48,11 @@ export function registerUpdateTaskStatus(server: McpServer): void {
       const byId = new Map(existingBodies.map((b) => [b.id, b]));
 
       const writes: FirestoreWrite[] = [];
+      const levelUpdates: Array<{
+        parentId: string | null;
+        elementId: string;
+        patch: { done: boolean };
+      }> = [];
       const results: Array<{ elementId: string; path: string | null; checked: boolean; found: boolean }> = [];
       for (const update of updates) {
         const body = byId.get(update.elementId);
@@ -50,11 +64,17 @@ export function registerUpdateTaskStatus(server: McpServer): void {
           path: `${bodiesPath}/${update.elementId}`,
           fields: { done: update.checked },
         });
+        levelUpdates.push({
+          parentId: body.parent,
+          elementId: update.elementId,
+          patch: { done: update.checked },
+        });
         const path = formatPath(map.header.title, ancestorDetails(existingBodies, update.elementId));
         results.push({ elementId: update.elementId, path, checked: update.checked, found: true });
       }
 
-      await client.commitWrites(writes);
+      const levelWrites = await buildUpdateEntryWrites(client, levelsPath, levelUpdates);
+      await client.commitWrites([...writes, ...levelWrites]);
 
       return {
         content: [{ type: "text", text: JSON.stringify({ results }, null, 2) }],

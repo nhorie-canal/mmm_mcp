@@ -49,6 +49,11 @@ export function bodiesPathOf(map: ResolvedMap): string {
   return `users/${map.ownerUid}/headers/${map.headerId}/bodies`;
 }
 
+/** levels移行: bodiesPathOfと対になる、階層ごとの子一覧を配列で持つ新形式コレクション。 */
+export function levelsPathOf(map: ResolvedMap): string {
+  return `users/${map.ownerUid}/headers/${map.headerId}/levels`;
+}
+
 /**
  * 書き込み系ツールの入口で呼ぶ。閲覧のみで共有されているマップに対する
  * 書き込みを、Firestoreルールに委ねる前にわかりやすいメッセージで止める。
