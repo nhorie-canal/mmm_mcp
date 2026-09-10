@@ -41,6 +41,16 @@ function buildConfirmationRequestText(title: string): string {
   );
 }
 
+class AiReadDeniedError extends Error {
+  constructor(title: string) {
+    super(
+      `「${title}」はAIからの読み取りが「常に拒否」に設定されているため、このツールでは読めません。` +
+        "読む必要がある場合は、アプリのマップ編集画面で設定を変更するようユーザーに伝えてください。"
+    );
+    this.name = "AiReadDeniedError";
+  }
+}
+
 export function registerListElements(server: McpServer): void {
   server.tool(
     "list_elements",
@@ -68,12 +78,21 @@ export function registerListElements(server: McpServer): void {
       const { client, session } = getContext();
       const map = await resolveMap(client, session, mapId);
 
+      // マップ単位のAI読み取り許可(aiReadPermission)。このフィールドは
+      // アプリのマップ編集画面からのみ変更でき、MCPサーバーのどの
+      // ツールからも書き込まない(AIが自分自身に許可を与えられると
+      // 確認の仕組みが意味を失うため)。
+      if (map.header.aiReadPermission === "deny") {
+        throw new AiReadDeniedError(map.header.title);
+      }
+      const alwaysAllowed = map.header.aiReadPermission === "allow";
+
       // 未確認のマップでは、確認を促す文面だけを返して終える。levelsの
       // 実データはこのゲートを通過するまで一切読みに行かない
       // (以前はlevels/rootの存在確認のために先に読んでしまっていたが、
       // 「実際の要素を返す前に必ず本人の明示的な許可を得る」という設計
       // 意図に反するため、確認ゲートの後に読む順序へ戻した)。
-      if (!confirmedMapIds.has(mapId)) {
+      if (!alwaysAllowed && !confirmedMapIds.has(mapId)) {
         if (confirmed === true) {
           confirmedMapIds.add(mapId);
         } else {
