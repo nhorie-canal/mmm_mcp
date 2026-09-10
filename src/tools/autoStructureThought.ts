@@ -41,42 +41,51 @@ export function registerAutoStructureThought(server: McpServer): void {
       const map = await resolveMap(client, session, mapId);
       assertCanEditMap(map, session);
       const levelsPath = levelsPathOf(map);
-      assertLevelsRootExists(await levelsDocExists(client, levelsPath, "root"), map.header.title);
       const bodiesPath = bodiesPathOf(map);
-
-      const existingDocs = await client.listDocuments(bodiesPath);
-      const existingBodies = existingDocs.map((d) => bodyFromFirestore(d.id, d.data));
-
       const targetParentId = parentElementId ?? null;
-      if (targetParentId !== null && !existingBodies.some((b) => b.id === targetParentId)) {
-        throw new Error(
-          `parentElementId(${targetParentId})がこのマップに見つかりません。list_elementsで確認してください。`
-        );
-      }
       const forest = buildForestFromTree(nodes);
-      const { writes, createdIds } = buildAppendWrites(
-        bodiesPath,
-        existingBodies,
-        forest,
-        targetParentId,
-        map.header.isTodo
-      );
-      // 挿入先のlevelsドキュメントが実際に存在するかを直接確認する
-      // (bodies側の状態から推測すると、levelsとbodiesが食い違っている
-      // 場合にarrayUnion書き込みが「ドキュメントが無い」で失敗しうるため)。
-      const targetLevelId = targetParentId ?? "root";
-      const targetHasLevelsDoc =
-        targetLevelId === "root" || (await levelsDocExists(client, levelsPath, targetLevelId));
-      const levelWrites = buildAppendLevelWrites(
-        levelsPath,
-        forest,
-        targetParentId,
-        targetHasLevelsDoc,
-        map.header.isTodo
-      );
-      await client.commitWrites([...writes, ...levelWrites]);
 
-      const path = formatPath(map.header.title, ancestorDetails(existingBodies, targetParentId));
+      // 読み取り(bodies一覧・levels存在確認)から書き込みまでを楽観的
+      // ロックでまとめる。読み取り後に対象ドキュメントが他から変更される
+      // とコミットがFAILED_PRECONDITIONになり、読み取りからやり直す。
+      let createdIds: string[] = [];
+      let existingBodiesForPath: ReturnType<typeof bodyFromFirestore>[] = [];
+      await client.runOptimistic(async () => {
+        assertLevelsRootExists(await levelsDocExists(client, levelsPath, "root"), map.header.title);
+        const existingDocs = await client.listDocuments(bodiesPath);
+        const existingBodies = existingDocs.map((d) => bodyFromFirestore(d.id, d.data, d.updateTime));
+        existingBodiesForPath = existingBodies;
+
+        if (targetParentId !== null && !existingBodies.some((b) => b.id === targetParentId)) {
+          throw new Error(
+            `parentElementId(${targetParentId})がこのマップに見つかりません。list_elementsで確認してください。`
+          );
+        }
+        const { writes, createdIds: ids } = buildAppendWrites(
+          bodiesPath,
+          existingBodies,
+          forest,
+          targetParentId,
+          map.header.isTodo
+        );
+        createdIds = ids;
+        // 挿入先のlevelsドキュメントが実際に存在するかを直接確認する
+        // (bodies側の状態から推測すると、levelsとbodiesが食い違っている
+        // 場合にarrayUnion書き込みが「ドキュメントが無い」で失敗しうるため)。
+        const targetLevelId = targetParentId ?? "root";
+        const targetHasLevelsDoc =
+          targetLevelId === "root" || (await levelsDocExists(client, levelsPath, targetLevelId));
+        const levelWrites = buildAppendLevelWrites(
+          levelsPath,
+          forest,
+          targetParentId,
+          targetHasLevelsDoc,
+          map.header.isTodo
+        );
+        return [...writes, ...levelWrites];
+      });
+
+      const path = formatPath(map.header.title, ancestorDetails(existingBodiesForPath, targetParentId));
       return {
         content: [
           {

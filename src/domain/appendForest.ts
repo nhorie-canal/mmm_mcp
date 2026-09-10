@@ -89,9 +89,23 @@ export function buildAppendWrites(
 
   if (roots.length > 0) {
     if (last !== null) {
-      writes.push({ path: `${bodiesPath}/${last}`, fields: { next: roots[0].id } });
+      // 末尾要素のnextを書き換える。読み取り後に他の操作(並行するappendや
+      // アプリ操作)がこの要素を書き換えていた場合、requireUpdateTimeにより
+      // FAILED_PRECONDITIONで失敗する(呼び出し側はrunOptimisticで読み取り
+      // からやり直す)。
+      const lastBody = existingBodies.find((b) => b.id === last);
+      writes.push({
+        path: `${bodiesPath}/${last}`,
+        fields: { next: roots[0].id },
+        requireUpdateTime: lastBody?.updateTime,
+      });
     } else if (targetParentId !== null) {
-      writes.push({ path: `${bodiesPath}/${targetParentId}`, fields: { child: roots[0].id } });
+      const parentBody = existingBodies.find((b) => b.id === targetParentId);
+      writes.push({
+        path: `${bodiesPath}/${targetParentId}`,
+        fields: { child: roots[0].id },
+        requireUpdateTime: parentBody?.updateTime,
+      });
     }
   }
 

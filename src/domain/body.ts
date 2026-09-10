@@ -9,9 +9,18 @@ export interface BodyDoc {
   child: string | null;
   /** 生の値をそのまま返す。祖先チェックの解釈はツールの説明文を通じて呼び出し側に委ねる。 */
   done: boolean;
+  /**
+   * 読み取り時点のFirestoreのupdateTime。連結リスト(prev/next/child)を
+   * 書き換えるときの楽観的ロック(FirestoreWrite.requireUpdateTime)に使う。
+   */
+  updateTime?: string;
 }
 
-export function bodyFromFirestore(id: string, data: Record<string, unknown>): BodyDoc {
+export function bodyFromFirestore(
+  id: string,
+  data: Record<string, unknown>,
+  updateTime?: string
+): BodyDoc {
   return {
     id,
     detail: String(data.detail ?? ""),
@@ -20,6 +29,7 @@ export function bodyFromFirestore(id: string, data: Record<string, unknown>): Bo
     parent: (data.parent as string | null | undefined) ?? null,
     child: (data.child as string | null | undefined) ?? null,
     done: Boolean(data.done ?? false),
+    updateTime,
   };
 }
 
@@ -120,4 +130,30 @@ export function lastChildOf(bodies: BodyDoc[], parentId: string | null): string 
     seen.add(current.id);
   }
   return current.id;
+}
+
+/**
+ * [rootId]自身とその配下(子孫)全ての id を集める。move/deleteのように
+ * 「要素ごと配下を丸ごと動かす・消す」操作の対象範囲を求めるために使う。
+ * 循環参照があっても無限ループしない。
+ */
+export function collectSubtreeIds(bodies: BodyDoc[], rootId: string): string[] {
+  const byParent = new Map<string | null, BodyDoc[]>();
+  for (const b of bodies) {
+    const list = byParent.get(b.parent) ?? [];
+    list.push(b);
+    byParent.set(b.parent, list);
+  }
+  const result: string[] = [];
+  const seen = new Set<string>();
+  function walk(id: string): void {
+    if (seen.has(id)) return;
+    seen.add(id);
+    result.push(id);
+    for (const child of byParent.get(id) ?? []) {
+      walk(child.id);
+    }
+  }
+  walk(rootId);
+  return result;
 }

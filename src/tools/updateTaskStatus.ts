@@ -40,41 +40,49 @@ export function registerUpdateTaskStatus(server: McpServer): void {
         );
       }
       const levelsPath = levelsPathOf(map);
-      assertLevelsRootExists(await levelsDocExists(client, levelsPath, "root"), map.header.title);
       const bodiesPath = bodiesPathOf(map);
 
-      const existingDocs = await client.listDocuments(bodiesPath);
-      const existingBodies = existingDocs.map((d) => bodyFromFirestore(d.id, d.data));
-      const byId = new Map(existingBodies.map((b) => [b.id, b]));
+      // 読み取り(bodies一覧・levelsの該当ドキュメント)から書き込みまでを
+      // 楽観的ロックでまとめる。読み取り後に他の操作が同じlevelsドキュメントを
+      // 書き換えていた場合はコミットがFAILED_PRECONDITIONになり、
+      // 読み取りからやり直す(runOptimisticが自動でリトライする)。
+      let results: Array<{ elementId: string; path: string | null; checked: boolean; found: boolean }> =
+        [];
+      await client.runOptimistic(async () => {
+        assertLevelsRootExists(await levelsDocExists(client, levelsPath, "root"), map.header.title);
+        const existingDocs = await client.listDocuments(bodiesPath);
+        const existingBodies = existingDocs.map((d) => bodyFromFirestore(d.id, d.data, d.updateTime));
+        const byId = new Map(existingBodies.map((b) => [b.id, b]));
 
-      const writes: FirestoreWrite[] = [];
-      const levelUpdates: Array<{
-        parentId: string | null;
-        elementId: string;
-        patch: { done: boolean };
-      }> = [];
-      const results: Array<{ elementId: string; path: string | null; checked: boolean; found: boolean }> = [];
-      for (const update of updates) {
-        const body = byId.get(update.elementId);
-        if (!body) {
-          results.push({ elementId: update.elementId, path: null, checked: update.checked, found: false });
-          continue;
+        const writes: FirestoreWrite[] = [];
+        const levelUpdates: Array<{
+          parentId: string | null;
+          elementId: string;
+          patch: { done: boolean };
+        }> = [];
+        results = [];
+        for (const update of updates) {
+          const body = byId.get(update.elementId);
+          if (!body) {
+            results.push({ elementId: update.elementId, path: null, checked: update.checked, found: false });
+            continue;
+          }
+          writes.push({
+            path: `${bodiesPath}/${update.elementId}`,
+            fields: { done: update.checked },
+          });
+          levelUpdates.push({
+            parentId: body.parent,
+            elementId: update.elementId,
+            patch: { done: update.checked },
+          });
+          const path = formatPath(map.header.title, ancestorDetails(existingBodies, update.elementId));
+          results.push({ elementId: update.elementId, path, checked: update.checked, found: true });
         }
-        writes.push({
-          path: `${bodiesPath}/${update.elementId}`,
-          fields: { done: update.checked },
-        });
-        levelUpdates.push({
-          parentId: body.parent,
-          elementId: update.elementId,
-          patch: { done: update.checked },
-        });
-        const path = formatPath(map.header.title, ancestorDetails(existingBodies, update.elementId));
-        results.push({ elementId: update.elementId, path, checked: update.checked, found: true });
-      }
 
-      const levelWrites = await buildUpdateEntryWrites(client, levelsPath, levelUpdates);
-      await client.commitWrites([...writes, ...levelWrites]);
+        const levelWrites = await buildUpdateEntryWrites(client, levelsPath, levelUpdates);
+        return [...writes, ...levelWrites];
+      });
 
       return {
         content: [{ type: "text", text: JSON.stringify({ results }, null, 2) }],

@@ -13,6 +13,12 @@ const BASE_URL = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJEC
 export interface FirestoreDoc {
   id: string;
   data: Record<string, unknown>;
+  /**
+   * ドキュメントの最終更新時刻(Firestoreのメタデータ)。楽観的ロックの
+   * ために読み取り時に保持しておき、書き込み時に[FirestoreWrite.requireUpdateTime]
+   * として渡すと、読み取り後に他から変更されていないかをコミット時に検証できる。
+   */
+  updateTime?: string;
 }
 
 export class FirestoreError extends Error {
@@ -57,6 +63,15 @@ export interface FirestoreWrite {
    * (無ければfieldsで新規作成する側を使う)。
    */
   arrayUnion?: { field: string; values: unknown[] };
+  /**
+   * 楽観的ロック。指定すると、コミット時点のドキュメントの実際のupdateTimeが
+   * この値と一致する場合のみ書き込みが適用される(Firestoreの
+   * currentDocument前提条件)。一致しなければコミット全体が
+   * FAILED_PRECONDITION(400)で失敗する。read-modify-writeの競合を
+   * 検出するために、読み取り時に得た[FirestoreDoc.updateTime]を渡すこと。
+   * [runOptimistic]と組み合わせて使う。
+   */
+  requireUpdateTime?: string;
 }
 
 export class FirestoreRestClient {
@@ -79,7 +94,49 @@ export class FirestoreRestClient {
     if (!res.ok) {
       throw new FirestoreError(data?.error?.message ?? `HTTP ${res.status}`, res.status, data);
     }
-    return { id: lastPathSegment(data.name), data: decodeFields(data.fields ?? {}) };
+    return {
+      id: lastPathSegment(data.name),
+      data: decodeFields(data.fields ?? {}),
+      updateTime: data.updateTime,
+    };
+  }
+
+  /**
+   * [operation]を実行し、返された[FirestoreWrite]をコミットする。[operation]
+   * が返す書き込みに[FirestoreWrite.requireUpdateTime]が含まれ、コミット時点で
+   * 対象ドキュメントが読み取り後に他から変更されていた場合(FAILED_PRECONDITION)、
+   * [operation]の読み取りからやり直して最大[maxAttempts]回リトライする。
+   *
+   * Firestoreの明示的なトランザクション(:beginTransaction)はFirebase Authの
+   * IDトークンではIAM権限が無く403になるため使えない(2026-09-09に実アカウントで
+   * 確認)。代わりにcurrentDocument.updateTimeによる楽観的ロックで
+   * read-modify-write競合を検出する。
+   */
+  async runOptimistic(
+    operation: () => Promise<FirestoreWrite[]>,
+    maxAttempts = 5
+  ): Promise<void> {
+    let lastError: unknown;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const writes = await operation();
+      try {
+        await this.commitWrites(writes);
+        return;
+      } catch (e) {
+        lastError = e;
+        const raw = e instanceof FirestoreError ? (e.raw as any) : undefined;
+        const isPreconditionFailed = raw?.error?.status === "FAILED_PRECONDITION";
+        if (!isPreconditionFailed) {
+          throw e;
+        }
+        // 読み取り後に他の書き込みが割り込んだ。少し待って
+        // 最初から(読み取りも含めて)やり直す。
+        await new Promise((resolve) => setTimeout(resolve, 50 * (attempt + 1)));
+      }
+    }
+    throw lastError instanceof Error
+      ? lastError
+      : new Error("runOptimistic: リトライ上限に達した");
   }
 
   /** コレクション配下の全ドキュメントを取得する(ページングを自動で辿る)。 */
@@ -96,7 +153,11 @@ export class FirestoreRestClient {
         throw new FirestoreError(data?.error?.message ?? `HTTP ${res.status}`, res.status, data);
       }
       for (const doc of data.documents ?? []) {
-        results.push({ id: lastPathSegment(doc.name), data: decodeFields(doc.fields ?? {}) });
+        results.push({
+          id: lastPathSegment(doc.name),
+          data: decodeFields(doc.fields ?? {}),
+          updateTime: doc.updateTime,
+        });
       }
       pageToken = data.nextPageToken;
     } while (pageToken);
@@ -179,8 +240,11 @@ export class FirestoreRestClient {
     const body = {
       writes: writes.map((w) => {
         const name = `projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/${w.path}`;
+        const currentDocument = w.requireUpdateTime
+          ? { currentDocument: { updateTime: w.requireUpdateTime } }
+          : {};
         if (w.delete) {
-          return { delete: name };
+          return { delete: name, ...currentDocument };
         }
         if (w.arrayUnion) {
           return {
@@ -199,6 +263,7 @@ export class FirestoreRestClient {
         return {
           update: { name, fields: encodeFields(fields) },
           updateMask: { fieldPaths: Object.keys(fields) },
+          ...currentDocument,
         };
       }),
     };

@@ -6,6 +6,9 @@ import { registerCreateMap } from "./tools/createMap.js";
 import { registerAutoStructureThought } from "./tools/autoStructureThought.js";
 import { registerUpdateTaskStatus } from "./tools/updateTaskStatus.js";
 import { registerImportMarkdownContext } from "./tools/importMarkdownContext.js";
+import { registerEditElement } from "./tools/editElement.js";
+import { registerDeleteElements } from "./tools/deleteElements.js";
+import { registerMoveElement } from "./tools/moveElement.js";
 
 const server = new McpServer(
   {
@@ -28,6 +31,9 @@ registerCreateMap(server);
 registerAutoStructureThought(server);
 registerUpdateTaskStatus(server);
 registerImportMarkdownContext(server);
+registerEditElement(server);
+registerDeleteElements(server);
+registerMoveElement(server);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);

@@ -194,6 +194,54 @@ export function buildAppendLevelWrites(
 }
 
 /**
+ * [levelId]のlevelsドキュメントのchildren配列から、idが[removeIds]に含まれる
+ * エントリを取り除くFirestoreWriteを1件返す。ドキュメントが無ければ何もしない
+ * (levelsはbest-effortの書き込みで、bodiesと食い違っていても実害は無いため)。
+ * requireUpdateTimeで楽観的ロックする(呼び出し側はrunOptimisticで使うこと)。
+ */
+export async function buildRemoveChildrenWrite(
+  client: FirestoreRestClient,
+  levelsPath: string,
+  levelId: string,
+  removeIds: string[]
+): Promise<FirestoreWrite | null> {
+  const doc = await client.getDocument(`${levelsPath}/${levelId}`);
+  if (!doc) return null;
+  const children = childrenOf(doc.data).filter((c) => !removeIds.includes(c.id));
+  return { path: `${levelsPath}/${levelId}`, fields: { children }, requireUpdateTime: doc.updateTime };
+}
+
+/**
+ * [levelId]のlevelsドキュメントのchildren配列の[afterId]の直後(nullなら先頭)に
+ * [entry]を挿入するFirestoreWriteを1件返す。ドキュメントが無ければ新規作成する
+ * (この場合はrequireUpdateTimeを付けない = 何も無い前提で作成する)。[afterId]が
+ * 見つからない場合は末尾に足す(Dart版LevelsRepository.insertChildと同じ方針)。
+ */
+export async function buildInsertChildWrite(
+  client: FirestoreRestClient,
+  levelsPath: string,
+  levelId: string,
+  entry: LevelChildEntry,
+  afterId: string | null
+): Promise<FirestoreWrite> {
+  const doc = await client.getDocument(`${levelsPath}/${levelId}`);
+  const children = doc ? childrenOf(doc.data) : [];
+  const insertIndex =
+    afterId === null
+      ? 0
+      : (() => {
+          const found = children.findIndex((c) => c.id === afterId);
+          return found === -1 ? children.length : found + 1;
+        })();
+  children.splice(Math.min(Math.max(insertIndex, 0), children.length), 0, entry);
+  return {
+    path: `${levelsPath}/${levelId}`,
+    fields: { children },
+    requireUpdateTime: doc?.updateTime,
+  };
+}
+
+/**
  * update_task_status用。[updates]を親ごとにグループ化し、levelsドキュメントを
  * 親ごとに1回だけ読んで該当エントリを書き換えた配列を書き戻すFirestoreWrite[]
  * を組み立てる(Dart版LevelsRepository.updateChildと同じ「読んで置換」方式)。
@@ -223,7 +271,14 @@ export async function buildUpdateEntryWrites(
       if (index === -1) continue;
       children[index] = { ...children[index], ...patch };
     }
-    writes.push({ path: `${levelsPath}/${levelId}`, fields: { children } });
+    // requireUpdateTime: 読み取り後に他の操作がこのlevelsドキュメントを
+    // 書き換えていた場合、この書き込みはFAILED_PRECONDITIONで失敗する
+    // (呼び出し側はrunOptimisticで読み取りからやり直すこと)。
+    writes.push({
+      path: `${levelsPath}/${levelId}`,
+      fields: { children },
+      requireUpdateTime: doc.updateTime,
+    });
   }
   return writes;
 }
