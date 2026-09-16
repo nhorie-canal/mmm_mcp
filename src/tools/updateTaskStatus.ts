@@ -9,7 +9,7 @@ import {
   assertCanEditMap,
 } from "../domain/mapResolver.js";
 import { bodyFromFirestore, ancestorDetails } from "../domain/body.js";
-import type { FirestoreWrite } from "../firestore/restClient.js";
+import { mergeWritesByPath, type FirestoreWrite } from "../firestore/restClient.js";
 import { assertLevelsRootExists, buildUpdateEntryWrites, levelsDocExists } from "../domain/levels.js";
 
 export function registerUpdateTaskStatus(server: McpServer): void {
@@ -81,7 +81,7 @@ export function registerUpdateTaskStatus(server: McpServer): void {
         }
 
         const levelWrites = await buildUpdateEntryWrites(client, levelsPath, levelUpdates);
-        return [...writes, ...levelWrites];
+        return mergeWritesByPath([...writes, ...levelWrites]);
       });
 
       return {

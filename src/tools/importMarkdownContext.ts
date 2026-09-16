@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { mergeWritesByPath } from "../firestore/restClient.js";
 import { getContext } from "../mcpContext.js";
 import {
   resolveMap,
@@ -80,7 +81,7 @@ export function registerImportMarkdownContext(server: McpServer): void {
           targetHasLevelsDoc,
           map.header.isTodo
         );
-        return [...writes, ...levelWrites];
+        return mergeWritesByPath([...writes, ...levelWrites]);
       });
 
       const path = formatPath(map.header.title, ancestorDetails(existingBodiesForPath, targetParentId));

@@ -9,7 +9,7 @@ import {
   assertCanEditMap,
 } from "../domain/mapResolver.js";
 import { bodyFromFirestore, ancestorDetails } from "../domain/body.js";
-import type { FirestoreWrite } from "../firestore/restClient.js";
+import { mergeWritesByPath, type FirestoreWrite } from "../firestore/restClient.js";
 import {
   assertLevelsRootExists,
   buildRemoveChildrenWrite,
@@ -169,7 +169,7 @@ export function registerMoveElement(server: McpServer): void {
             ? []
             : ancestorDetails(existingBodies, newParentElementId)
         );
-        return writes;
+        return mergeWritesByPath(writes);
       });
 
       return {
