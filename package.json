@@ -10,7 +10,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/server.js",
-    "login": "node dist/bin/login.js"
+    "login": "node dist/bin/login.js",
+    "test": "tsc -p tsconfig.json && node --test \"dist/src/**/*.test.js\""
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
