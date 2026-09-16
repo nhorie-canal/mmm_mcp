@@ -14,6 +14,7 @@ import {
   assertLevelsRootExists,
   buildRemoveChildrenWrite,
   buildInsertChildWrite,
+  buildReorderChildWrite,
   levelsDocExists,
 } from "../domain/levels.js";
 
@@ -143,17 +144,24 @@ export function registerMoveElement(server: McpServer): void {
 
         // 3) levels側: 元の親から取り除き、新しい親へ挿入する
         const oldLevelId = body.parent ?? "root";
-        const removeWrite = await buildRemoveChildrenWrite(client, levelsPath, oldLevelId, [elementId]);
-        if (removeWrite) writes.push(removeWrite);
         const newLevelId = newParentElementId ?? "root";
-        const insertWrite = await buildInsertChildWrite(
-          client,
-          levelsPath,
-          newLevelId,
-          { id: elementId, detail: body.detail, done: body.done },
-          newPrevId
-        );
-        writes.push(insertWrite);
+        const entry = { id: elementId, detail: body.detail, done: body.done };
+        if (oldLevelId === newLevelId) {
+          // **同じ親の中での並べ替えは1つの書き込みにまとめること。**
+          // remove用とinsert用を別々に作ると、どちらも「元のchildren」を
+          // 読んでから組み立てるため、同じドキュメントへの書き込みが2つでき、
+          // 後勝ちのinsert側だけが残る。insert側は対象がまだ入ったままの配列に
+          // もう1つ足したものなので、要素が重複する(実データで踏んだ)。
+          writes.push(
+            await buildReorderChildWrite(client, levelsPath, oldLevelId, entry, newPrevId)
+          );
+        } else {
+          const removeWrite = await buildRemoveChildrenWrite(client, levelsPath, oldLevelId, [elementId]);
+          if (removeWrite) writes.push(removeWrite);
+          writes.push(
+            await buildInsertChildWrite(client, levelsPath, newLevelId, entry, newPrevId)
+          );
+        }
 
         path = formatPath(
           map.header.title,

@@ -217,6 +217,38 @@ export async function buildRemoveChildrenWrite(
  * (この場合はrequireUpdateTimeを付けない = 何も無い前提で作成する)。[afterId]が
  * 見つからない場合は末尾に足す(Dart版LevelsRepository.insertChildと同じ方針)。
  */
+/**
+ * [levelId]のchildrenの中で[entry]を一度取り除いてから、[afterId]の直後
+ * (nullなら先頭)へ入れ直す書き込みを作る。同じ親の中での並べ替え専用。
+ *
+ * **remove用とinsert用の書き込みを別々に作って両方commitしてはいけない。**
+ * どちらも「元のchildren」を読んでから組み立てるため、同じドキュメントへの
+ * 書き込みが2つできて後勝ちになり、要素が重複する。
+ */
+export async function buildReorderChildWrite(
+  client: FirestoreRestClient,
+  levelsPath: string,
+  levelId: string,
+  entry: LevelChildEntry,
+  afterId: string | null
+): Promise<FirestoreWrite> {
+  const doc = await client.getDocument(`${levelsPath}/${levelId}`);
+  const children = (doc ? childrenOf(doc.data) : []).filter((c) => c.id !== entry.id);
+  const insertIndex =
+    afterId === null
+      ? 0
+      : (() => {
+          const found = children.findIndex((c) => c.id === afterId);
+          return found === -1 ? children.length : found + 1;
+        })();
+  children.splice(Math.min(Math.max(insertIndex, 0), children.length), 0, entry);
+  return {
+    path: `${levelsPath}/${levelId}`,
+    fields: { children },
+    requireUpdateTime: doc?.updateTime,
+  };
+}
+
 export async function buildInsertChildWrite(
   client: FirestoreRestClient,
   levelsPath: string,
