@@ -24,6 +24,8 @@ export function registerCreateMap(server: McpServer): void {
       // commitWritesにまとめて作る。levels/rootを最初から持たせておくことで、
       // 直後に書き込み系ツールを呼んでも「アプリで一度開いてください」で
       // 弾かれない(移行ではなく単なる初期化なので問題ない)。
+      // migratedはアプリの新規作成(header_add_model.dart)と揃える。無いと、
+      // 切替前のアプリが開いたときに未移行とみなしてbodiesから作り直してしまう。
       const headerId = newDocId();
       const headerPath = `users/${session.uid}/headers/${headerId}`;
       await client.commitWrites([
@@ -31,7 +33,7 @@ export function registerCreateMap(server: McpServer): void {
           path: headerPath,
           fields: { title, order: maxOrder + 1, isTodo, editors: [], viewers: [] },
         },
-        { path: `${headerPath}/levels/root`, fields: { children: [] } },
+        { path: `${headerPath}/levels/root`, fields: { children: [], migrated: true } },
       ]);
 
       return {
