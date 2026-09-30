@@ -1,5 +1,7 @@
 # mmm-mcp-server
 
+日本語 | [English](README.en.md)
+
 Matryoshka Mind Map（マトリョシカ、マインドマップ／TODOアプリ）の自分のマップを、
 AIエージェントとの会話から直接読み書きできるようにするツールです。MCP
 （Model Context Protocol）という共通規格に対応したツールなので、Claude
