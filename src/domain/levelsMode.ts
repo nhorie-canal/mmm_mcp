@@ -1,6 +1,8 @@
 // levels移行の切替フラグ。アプリと同じく Firestore の config/app.migrationEnabled を
-// 見て、trueなら書き込み系ツールはbodiesを一切使わずlevelsだけで読み書きする
-// (levelsOps.ts)。falseの間は従来どおりbodiesとlevelsの両方へ書く。
+// 見て、明示的にfalseの間だけ従来どおりbodiesとlevelsの両方へ書く。それ以外
+// (true・フィールドが無い・ドキュメントが無い)はbodiesを一切使わずlevelsだけで
+// 読み書きする(levelsOps.ts)。bodies削除後にフラグを消しても、公開済みの古い版が
+// bodiesへ書きに行かないよう、未設定はlevels側に倒す。
 //
 // フラグを見ずにlevelsだけへ書くと、切替前はアプリ(bodiesを読んで書く)の
 // 書き込みがMCPの変更を上書きしてしまう。逆にbodiesを使い続けると、切替後は
@@ -14,7 +16,7 @@ import { levelsSnapshotFromDocs, type LevelsSnapshot } from "./levelsOps.js";
 
 export async function isLevelsOnly(client: FirestoreRestClient): Promise<boolean> {
   const config = await client.getDocument("config/app");
-  return config?.data.migrationEnabled === true;
+  return config?.data.migrationEnabled !== false;
 }
 
 /** levels全件を読む。levels/rootが無ければ、アプリで開いてもらうよう案内して止める。 */

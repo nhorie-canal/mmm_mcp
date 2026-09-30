@@ -12,9 +12,13 @@ function fakeClient(configApp: FirestoreDoc | null): FirestoreRestClient {
   } as unknown as FirestoreRestClient;
 }
 
-test("isLevelsOnly: migrationEnabledがtrueのときだけlevelsだけで読み書きする", async () => {
+test("isLevelsOnly: migrationEnabledが明示的にfalseのときだけbodiesとlevelsの両方へ書く", async () => {
   assert.equal(await isLevelsOnly(fakeClient({ id: "app", data: { migrationEnabled: true } })), true);
   assert.equal(await isLevelsOnly(fakeClient({ id: "app", data: { migrationEnabled: false } })), false);
-  assert.equal(await isLevelsOnly(fakeClient({ id: "app", data: {} })), false);
-  assert.equal(await isLevelsOnly(fakeClient(null)), false);
+});
+
+test("isLevelsOnly: migrationEnabledが無ければlevelsだけで読み書きする", async () => {
+  // bodies削除後にフラグを消しても、公開済みの古い版がbodiesへ書きに行かないようにする。
+  assert.equal(await isLevelsOnly(fakeClient({ id: "app", data: {} })), true);
+  assert.equal(await isLevelsOnly(fakeClient(null)), true);
 });
