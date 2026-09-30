@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getContext } from "../mcpContext.js";
+import { isLevelsOnly, readLevelsSnapshot } from "../domain/levelsMode.js";
+import { ancestorDetailsInLevels, buildLevelsPatchWrites } from "../domain/levelsOps.js";
 import {
   resolveMap,
   bodiesPathOf,
@@ -41,6 +43,31 @@ export function registerUpdateTaskStatus(server: McpServer): void {
       }
       const levelsPath = levelsPathOf(map);
       const bodiesPath = bodiesPathOf(map);
+
+      if (await isLevelsOnly(client)) {
+        let levelsResults: Array<{ elementId: string; path: string | null; checked: boolean; found: boolean }> =
+          [];
+        await client.runOptimistic(async () => {
+          const snapshot = await readLevelsSnapshot(client, levelsPath, map.header.title);
+          const { writes, found } = buildLevelsPatchWrites(
+            levelsPath,
+            snapshot,
+            updates.map((u) => ({ elementId: u.elementId, patch: { done: u.checked } }))
+          );
+          levelsResults = updates.map((u) => ({
+            elementId: u.elementId,
+            path: found.has(u.elementId)
+              ? formatPath(map.header.title, ancestorDetailsInLevels(snapshot, u.elementId))
+              : null,
+            checked: u.checked,
+            found: found.has(u.elementId),
+          }));
+          return writes;
+        });
+        return {
+          content: [{ type: "text", text: JSON.stringify({ results: levelsResults }, null, 2) }],
+        };
+      }
 
       // 読み取り(bodies一覧・levelsの該当ドキュメント)から書き込みまでを
       // 楽観的ロックでまとめる。読み取り後に他の操作が同じlevelsドキュメントを

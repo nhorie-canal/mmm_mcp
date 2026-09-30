@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getContext } from "../mcpContext.js";
+import { isLevelsOnly, readLevelsSnapshot } from "../domain/levelsMode.js";
+import { ancestorDetailsInLevels, buildLevelsPatchWrites } from "../domain/levelsOps.js";
 import {
   resolveMap,
   bodiesPathOf,
@@ -28,6 +30,26 @@ export function registerEditElement(server: McpServer): void {
       assertCanEditMap(map, session);
       const levelsPath = levelsPathOf(map);
       const bodiesPath = bodiesPathOf(map);
+
+      if (await isLevelsOnly(client)) {
+        let levelsPathResult: string | null = null;
+        await client.runOptimistic(async () => {
+          const snapshot = await readLevelsSnapshot(client, levelsPath, map.header.title);
+          const { writes, found } = buildLevelsPatchWrites(levelsPath, snapshot, [
+            { elementId, patch: { detail } },
+          ]);
+          if (!found.has(elementId)) {
+            throw new Error(
+              `elementId(${elementId})がこのマップに見つかりません。list_elementsで確認してください。`
+            );
+          }
+          levelsPathResult = formatPath(map.header.title, ancestorDetailsInLevels(snapshot, elementId));
+          return writes;
+        });
+        return {
+          content: [{ type: "text", text: JSON.stringify({ path: levelsPathResult }, null, 2) }],
+        };
+      }
 
       assertLevelsRootExists(await levelsDocExists(client, levelsPath, "root"), map.header.title);
 

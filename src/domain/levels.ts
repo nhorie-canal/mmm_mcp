@@ -39,7 +39,7 @@ function toEntry(raw: unknown): LevelChildEntry | null {
   };
 }
 
-function childrenOf(data: Record<string, unknown>): LevelChildEntry[] {
+export function childrenOf(data: Record<string, unknown>): LevelChildEntry[] {
   const raw = data.children;
   if (!Array.isArray(raw)) return [];
   const result: LevelChildEntry[] = [];

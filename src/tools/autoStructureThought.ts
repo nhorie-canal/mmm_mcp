@@ -2,6 +2,8 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { mergeWritesByPath } from "../firestore/restClient.js";
 import { getContext } from "../mcpContext.js";
+import { isLevelsOnly, readLevelsSnapshot } from "../domain/levelsMode.js";
+import { ancestorDetailsInLevels, buildLevelsAppendWrites, locateInLevels } from "../domain/levelsOps.js";
 import {
   resolveMap,
   bodiesPathOf,
@@ -45,6 +47,28 @@ export function registerAutoStructureThought(server: McpServer): void {
       const bodiesPath = bodiesPathOf(map);
       const targetParentId = parentElementId ?? null;
       const forest = buildForestFromTree(nodes);
+
+      if (await isLevelsOnly(client)) {
+        let levelsPathResult = "";
+        await client.runOptimistic(async () => {
+          const snapshot = await readLevelsSnapshot(client, levelsPath, map.header.title);
+          if (targetParentId !== null && !locateInLevels(snapshot, targetParentId)) {
+            throw new Error(
+              `parentElementId(${targetParentId})がこのマップに見つかりません。list_elementsで確認してください。`
+            );
+          }
+          levelsPathResult = formatPath(map.header.title, ancestorDetailsInLevels(snapshot, targetParentId));
+          return buildLevelsAppendWrites(levelsPath, snapshot, forest, targetParentId, map.header.isTodo);
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ path: levelsPathResult, addedElementCount: forest.length }, null, 2),
+            },
+          ],
+        };
+      }
 
       // 読み取り(bodies一覧・levels存在確認)から書き込みまでを楽観的
       // ロックでまとめる。読み取り後に対象ドキュメントが他から変更される

@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getContext } from "../mcpContext.js";
+import { isLevelsOnly, readLevelsSnapshot } from "../domain/levelsMode.js";
+import { ancestorDetailsInLevels, buildLevelsDeleteWrites, locateInLevels, subtreeIdsInLevels } from "../domain/levelsOps.js";
 import {
   resolveMap,
   bodiesPathOf,
@@ -34,6 +36,73 @@ export function registerDeleteElements(server: McpServer): void {
       const levelsPath = levelsPathOf(map);
       const bodiesPath = bodiesPathOf(map);
       assertLevelsRootExists(await levelsDocExists(client, levelsPath, "root"), map.header.title);
+
+      if (await isLevelsOnly(client)) {
+        if (confirmed !== true) {
+          const snapshot = await readLevelsSnapshot(client, levelsPath, map.header.title);
+          const allTargets = new Set<string>();
+          const targets: Array<{ elementId: string; path: string; subtreeCount: number }> = [];
+          for (const elementId of elementIds) {
+            if (!locateInLevels(snapshot, elementId)) {
+              throw new Error(
+                `elementId(${elementId})がこのマップに見つかりません。list_elementsで確認してください。`
+              );
+            }
+            const subtree = subtreeIdsInLevels(snapshot, elementId);
+            for (const id of subtree) allTargets.add(id);
+            targets.push({
+              elementId,
+              path: formatPath(map.header.title, ancestorDetailsInLevels(snapshot, elementId)),
+              subtreeCount: subtree.length,
+            });
+          }
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(
+                  {
+                    confirmationRequired: true,
+                    message:
+                      "削除は取り返しがつきません。以下の内容をユーザーに提示して明示的な同意を得てから、" +
+                      "confirmed: trueで呼び直してください。",
+                    targets,
+                    totalElementCount: allTargets.size,
+                  },
+                  null,
+                  2
+                ),
+              },
+            ],
+          };
+        }
+
+        const levelsDeleted: Array<{ elementId: string; path: string; subtreeCount: number }> = [];
+        let levelsTotal = 0;
+        await client.runOptimistic(async () => {
+          levelsDeleted.length = 0;
+          const snapshot = await readLevelsSnapshot(client, levelsPath, map.header.title);
+          for (const elementId of elementIds) {
+            if (!locateInLevels(snapshot, elementId)) continue; // 既に削除済み(リトライ時など)
+            levelsDeleted.push({
+              elementId,
+              path: formatPath(map.header.title, ancestorDetailsInLevels(snapshot, elementId)),
+              subtreeCount: subtreeIdsInLevels(snapshot, elementId).length,
+            });
+          }
+          const { writes, deletedIds } = buildLevelsDeleteWrites(levelsPath, snapshot, elementIds);
+          levelsTotal = deletedIds.size;
+          return writes;
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ deleted: levelsDeleted, totalElementCount: levelsTotal }, null, 2),
+            },
+          ],
+        };
+      }
 
       if (confirmed !== true) {
         const existingDocs = await client.listDocuments(bodiesPath);

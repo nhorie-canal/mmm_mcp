@@ -2,6 +2,8 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { mergeWritesByPath } from "../firestore/restClient.js";
 import { getContext } from "../mcpContext.js";
+import { isLevelsOnly, readLevelsSnapshot } from "../domain/levelsMode.js";
+import { ancestorDetailsInLevels, buildLevelsAppendWrites, locateInLevels } from "../domain/levelsOps.js";
 import {
   resolveMap,
   bodiesPathOf,
@@ -42,6 +44,36 @@ export function registerImportMarkdownContext(server: McpServer): void {
       const parsed = parseMarkdownForImport(markdown, { headingsAsNodes: true });
       if (parsed.nodes.length === 0) {
         throw new Error("Markdownからリスト項目・見出しが見つかりませんでした。");
+      }
+
+      if (await isLevelsOnly(client)) {
+        let levelsPathResult = "";
+        await client.runOptimistic(async () => {
+          const snapshot = await readLevelsSnapshot(client, levelsPath, map.header.title);
+          if (targetParentId !== null && !locateInLevels(snapshot, targetParentId)) {
+            throw new Error(
+              `parentElementId(${targetParentId})がこのマップに見つかりません。list_elementsで確認してください。`
+            );
+          }
+          levelsPathResult = formatPath(map.header.title, ancestorDetailsInLevels(snapshot, targetParentId));
+          return buildLevelsAppendWrites(levelsPath, snapshot, parsed.nodes, targetParentId, map.header.isTodo);
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                {
+                  path: levelsPathResult,
+                  addedElementCount: parsed.nodes.length,
+                  checkboxIgnored: !map.header.isTodo && parsed.hasCheckbox,
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
       }
 
       // 読み取り(bodies一覧・levels存在確認)から書き込みまでを楽観的

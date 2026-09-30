@@ -72,6 +72,12 @@ export interface FirestoreWrite {
    * [runOptimistic]と組み合わせて使う。
    */
   requireUpdateTime?: string;
+  /**
+   * trueならドキュメントがまだ存在しない場合だけ書き込む(currentDocument.exists=false)。
+   * 読み取り時に無かったドキュメントを新規作成するときに使い、その間に他から
+   * 作られていればFAILED_PRECONDITIONで失敗させる。[requireUpdateTime]と同時には使わない。
+   */
+  requireMissing?: boolean;
 }
 
 /**
@@ -108,6 +114,7 @@ export function mergeWritesByPath(writes: FirestoreWrite[]): FirestoreWrite[] {
       path: write.path,
       fields: { ...(prev.fields ?? {}), ...(write.fields ?? {}) },
       requireUpdateTime: prev.requireUpdateTime ?? write.requireUpdateTime,
+      requireMissing: prev.requireMissing ?? write.requireMissing,
     });
   }
   return order.map((path) => byPath.get(path)!);
@@ -281,7 +288,9 @@ export class FirestoreRestClient {
         const name = `projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/${w.path}`;
         const currentDocument = w.requireUpdateTime
           ? { currentDocument: { updateTime: w.requireUpdateTime } }
-          : {};
+          : w.requireMissing
+            ? { currentDocument: { exists: false } }
+            : {};
         if (w.delete) {
           return { delete: name, ...currentDocument };
         }
