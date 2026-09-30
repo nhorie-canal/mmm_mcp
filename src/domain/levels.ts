@@ -8,7 +8,9 @@
 // そのまま兄弟順。子を持つ要素だけドキュメントが存在する(無ければ葉)。
 //
 // MCPは「新形式のみ対応」(移行ロジックはDart側だけに持たせる)。levels/root
-// が無いマップに対する操作は、アプリで一度開いてもらうよう案内して止める。
+// が無いマップに対する操作は、切替前(bodiesとlevelsの両方へ書く間)だけ、
+// アプリで一度開いてもらうよう案内して止める。切替後は空のマップとして扱う
+// (levelsMode.tsのreadLevelsSnapshot)。
 
 import type { FirestoreRestClient, FirestoreWrite } from "../firestore/restClient.js";
 

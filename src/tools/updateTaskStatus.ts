@@ -48,7 +48,7 @@ export function registerUpdateTaskStatus(server: McpServer): void {
         let levelsResults: Array<{ elementId: string; path: string | null; checked: boolean; found: boolean }> =
           [];
         await client.runOptimistic(async () => {
-          const snapshot = await readLevelsSnapshot(client, levelsPath, map.header.title);
+          const snapshot = await readLevelsSnapshot(client, levelsPath);
           const { writes, found } = buildLevelsPatchWrites(
             levelsPath,
             snapshot,

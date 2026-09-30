@@ -11,7 +11,6 @@
 // 再起動しなくても切替に追従する。
 
 import type { FirestoreRestClient } from "../firestore/restClient.js";
-import { LevelsNotInitializedError } from "./levels.js";
 import { levelsSnapshotFromDocs, type LevelsSnapshot } from "./levelsOps.js";
 
 export async function isLevelsOnly(client: FirestoreRestClient): Promise<boolean> {
@@ -19,13 +18,15 @@ export async function isLevelsOnly(client: FirestoreRestClient): Promise<boolean
   return config?.data.migrationEnabled !== false;
 }
 
-/** levels全件を読む。levels/rootが無ければ、アプリで開いてもらうよう案内して止める。 */
+/**
+ * levels全件を読む。levels/rootが無いマップは空のマップとして扱う
+ * (rootへの最初の書き込みは、存在しないことを前提条件にした新規作成になる)。
+ * 切替後はアプリでマップを開いてもrootが作られないので、「アプリで開いて」と
+ * 止めると中身の無い古いマップへ永久に書き込めなくなる。
+ */
 export async function readLevelsSnapshot(
   client: FirestoreRestClient,
-  levelsPath: string,
-  mapTitle: string
+  levelsPath: string
 ): Promise<LevelsSnapshot> {
-  const snapshot = levelsSnapshotFromDocs(await client.listDocuments(levelsPath));
-  if (!snapshot.has("root")) throw new LevelsNotInitializedError(mapTitle);
-  return snapshot;
+  return levelsSnapshotFromDocs(await client.listDocuments(levelsPath));
 }

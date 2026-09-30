@@ -49,7 +49,7 @@ export function registerMoveElement(server: McpServer): void {
       if (await isLevelsOnly(client)) {
         let levelsPathResult: string | null = null;
         await client.runOptimistic(async () => {
-          const snapshot = await readLevelsSnapshot(client, levelsPath, map.header.title);
+          const snapshot = await readLevelsSnapshot(client, levelsPath);
           if (afterElementId !== null && !locateInLevels(snapshot, afterElementId)) {
             throw new Error(`afterElementId(${afterElementId})がこのマップに見つかりません。`);
           }

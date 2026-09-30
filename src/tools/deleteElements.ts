@@ -39,7 +39,7 @@ export function registerDeleteElements(server: McpServer): void {
 
       if (await isLevelsOnly(client)) {
         if (confirmed !== true) {
-          const snapshot = await readLevelsSnapshot(client, levelsPath, map.header.title);
+          const snapshot = await readLevelsSnapshot(client, levelsPath);
           const allTargets = new Set<string>();
           const targets: Array<{ elementId: string; path: string; subtreeCount: number }> = [];
           for (const elementId of elementIds) {
@@ -81,7 +81,7 @@ export function registerDeleteElements(server: McpServer): void {
         let levelsTotal = 0;
         await client.runOptimistic(async () => {
           levelsDeleted.length = 0;
-          const snapshot = await readLevelsSnapshot(client, levelsPath, map.header.title);
+          const snapshot = await readLevelsSnapshot(client, levelsPath);
           for (const elementId of elementIds) {
             if (!locateInLevels(snapshot, elementId)) continue; // 既に削除済み(リトライ時など)
             levelsDeleted.push({

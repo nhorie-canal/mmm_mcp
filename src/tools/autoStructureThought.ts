@@ -51,7 +51,7 @@ export function registerAutoStructureThought(server: McpServer): void {
       if (await isLevelsOnly(client)) {
         let levelsPathResult = "";
         await client.runOptimistic(async () => {
-          const snapshot = await readLevelsSnapshot(client, levelsPath, map.header.title);
+          const snapshot = await readLevelsSnapshot(client, levelsPath);
           if (targetParentId !== null && !locateInLevels(snapshot, targetParentId)) {
             throw new Error(
               `parentElementId(${targetParentId})がこのマップに見つかりません。list_elementsで確認してください。`

@@ -1,6 +1,6 @@
 {
   "name": "mmm-mcp-server",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "mcpName": "io.github.nhorie-canal/mmm-mcp-server",
   "description": "Matryoshka Mind Map の自分のデータをClaudeから直接読み書きするMCPサーバー",
   "license": "MIT",

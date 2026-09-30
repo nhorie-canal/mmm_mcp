@@ -34,7 +34,7 @@ export function registerEditElement(server: McpServer): void {
       if (await isLevelsOnly(client)) {
         let levelsPathResult: string | null = null;
         await client.runOptimistic(async () => {
-          const snapshot = await readLevelsSnapshot(client, levelsPath, map.header.title);
+          const snapshot = await readLevelsSnapshot(client, levelsPath);
           const { writes, found } = buildLevelsPatchWrites(levelsPath, snapshot, [
             { elementId, patch: { detail } },
           ]);
