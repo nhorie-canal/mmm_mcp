@@ -51,7 +51,7 @@ export class AuthSession {
 export class NotSignedInError extends Error {
   constructor() {
     super(
-      "サインインしていません。ターミナルで `npm run login` (mcp-server ディレクトリ内) を実行してください。"
+      "サインインしていません。ターミナルで `npx -y -p mmm-mcp-server mmm-login login --method google` を実行してください(email / apple も選べます。git clone して使っている場合は、そのフォルダで `npm run login -- login --method google`)。"
     );
     this.name = "NotSignedInError";
   }

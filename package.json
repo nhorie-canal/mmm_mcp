@@ -1,17 +1,36 @@
 {
   "name": "mmm-mcp-server",
   "version": "0.1.0",
-  "private": true,
   "description": "Matryoshka Mind Map の自分のデータをClaudeから直接読み書きするMCPサーバー",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nhorie-canal/mmm_mcp.git"
+  },
+  "homepage": "https://github.com/nhorie-canal/mmm_mcp#readme",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mindmap",
+    "todo",
+    "claude",
+    "matryoshka"
+  ],
   "type": "module",
   "bin": {
+    "mmm-mcp-server": "dist/src/server.js",
     "mmm-login": "dist/bin/login.js"
   },
+  "files": [
+    "dist/src",
+    "dist/bin",
+    "!dist/**/*.test.js"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/server.js",
     "login": "node dist/bin/login.js",
-    "test": "tsc -p tsconfig.json && node --test \"dist/src/**/*.test.js\""
+    "test": "tsc -p tsconfig.json && node --test \"dist/src/**/*.test.js\"",
+    "prepublishOnly": "npm test"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
