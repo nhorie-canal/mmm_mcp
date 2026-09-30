@@ -16,15 +16,17 @@ Desktop・Claude Codeに限らず、MCPに対応したAIエージェントであ
 起動し、あなた自身のログイン情報であなた自身のマップにアクセスします（開発者側は
 あなたのデータを見ることができません）。
 
-> **2026年9月30日より前にダウンロードした方へ**: アプリ側のデータ形式の切り替えに
-> 伴い、古い版ではマップへの書き込みが失敗するようになります。`mmm_mcp` フォルダで
-> `git pull && npm run build` を実行し、AIエージェントを再起動してください。
+> **2026年9月30日より前に `git clone` で導入した方へ**: アプリ側のデータ形式の
+> 切り替えに伴い、古い版ではマップへの書き込みが失敗するようになります。下の手順5の
+> 登録を `npx -y mmm-mcp-server` に置き換えてください（ログインし直す必要はありません）。
+> clone したまま使い続ける場合は、`mmm_mcp` フォルダで `git pull && npm install && npm run build`
+> を実行してからAIエージェントを再起動してください。
 
 > このページは、ある程度パソコン操作に慣れていない方でも迷わず進められるよう、
 > ターミナル（コマンドを打つ画面）の開き方から順に説明しています。
 >
-> **対応OS**: macOS・Windowsの両方で動作するはずです。Node.jsとgitだけで
-> 動くツールで、OS固有の機能には依存していません。ただし**実機での動作
+> **対応OS**: macOS・Windowsの両方で動作するはずです。Node.jsだけで動く
+> ツールで、OS固有の機能には依存していません。ただし**実機での動作
 > 確認はmacOSでのみ行っています。** Windowsで試して気づいた点があれば、
 > このリポジトリのIssueで教えてください。手順のうち、操作方法がOSで
 > 異なる箇所（ターミナルの開き方・Node.jsのインストール）はmacOS/Windows
@@ -85,42 +87,16 @@ https://nodejs.org/
 node --version
 ```
 
-## 4. mmm-mcp-serverをダウンロードする
-
-```bash
-git clone https://github.com/nhorie-canal/mmm_mcp.git
-```
-
-コマンドの実行が終わったら、作られたフォルダに移動します。
-
-```bash
-cd mmm_mcp
-```
-
-## 5. セットアップする
-
-必要な部品を取り込みます（少し時間がかかります）。
-
-```bash
-npm install
-```
-
-続けて、使える状態にビルドします。
-
-```bash
-npm run build
-```
-
-## 6. ログインする
+## 4. ログインする
 
 Matryoshka Mind Mapアプリで普段どのログイン方法を使っているかに合わせて、
 次の3つから選んでください。**いずれの方法も、あなた自身が事前に何かを準備する
-必要はありません。**
+必要はありません。** 初回はツールのダウンロードが入るので、少し時間がかかります。
 
 ### Googleでログインしている場合
 
 ```bash
-node dist/bin/login.js login --method google
+npx -y -p mmm-mcp-server mmm-login login --method google
 ```
 
 ブラウザが自動で開くので、いつも使っているGoogleアカウントでログインします。
@@ -128,7 +104,7 @@ node dist/bin/login.js login --method google
 ### Appleでログインしている場合
 
 ```bash
-node dist/bin/login.js login --method apple
+npx -y -p mmm-mcp-server mmm-login login --method apple
 ```
 
 こちらもブラウザが自動で開くので、Apple IDでログインします。
@@ -136,7 +112,7 @@ node dist/bin/login.js login --method apple
 ### メールアドレスとパスワードでログインしている場合
 
 ```bash
-node dist/bin/login.js login --method email
+npx -y -p mmm-mcp-server mmm-login login --method email
 ```
 
 メールアドレスとパスワードを聞かれるので入力してください（パスワードは
@@ -153,37 +129,27 @@ node dist/bin/login.js login --method email
 あなたのパソコンの中だけに、あなた以外読めない形で保存されます）。
 
 ```bash
-node dist/bin/login.js status
+npx -y -p mmm-mcp-server mmm-login status
 ```
 
 でログイン状態を確認できます。ログアウトしたい場合は次のコマンドです。
 
 ```bash
-node dist/bin/login.js logout
+npx -y -p mmm-mcp-server mmm-login logout
 ```
 
-## 7. AIエージェントにMatryoshkaを教える
+## 5. AIエージェントにMatryoshkaを教える
 
 ここでは動作確認済みのClaude Desktop / Claude Codeへの登録方法を示します。
 他のMCP対応クライアント（例: Codexなど）を使っている場合も、多くは同じように
-「サーバーを起動するコマンド」（`node <mmm_mcpのパス>/dist/src/server.js`）を
-そのクライアントのMCPサーバー設定に登録するだけで使えるはずです。具体的な
-登録方法はお使いのクライアントのドキュメントを確認してください。
-
-このステップで、あなたが今どこのフォルダにいるかによって次のコマンドの一部が
-変わります。次のコマンドで今いる場所（絶対パス）を確認してください。
-
-```bash
-pwd
-```
-
-表示された場所（例: `/Users/あなたの名前/mmm_mcp`）を、以下の
-`<mmm_mcpのパス>`の部分に置き換えて使います。
+「サーバーを起動するコマンド」（`npx -y mmm-mcp-server`）をそのクライアントの
+MCPサーバー設定に登録するだけで使えるはずです。具体的な登録方法はお使いの
+クライアントのドキュメントを確認してください。
 
 ### Claude Codeを使っている場合
 
 ```bash
-claude mcp add mmm -- node <mmm_mcpのパス>/dist/src/server.js
+claude mcp add mmm -- npx -y mmm-mcp-server
 ```
 
 ### Claude Desktopを使っている場合
@@ -195,8 +161,8 @@ Claude Desktopの設定ファイル（`claude_desktop_config.json`）を開き�
 {
   "mcpServers": {
     "mmm": {
-      "command": "node",
-      "args": ["<mmm_mcpのパス>/dist/src/server.js"]
+      "command": "npx",
+      "args": ["-y", "mmm-mcp-server"]
     }
   }
 }
@@ -204,7 +170,7 @@ Claude Desktopの設定ファイル（`claude_desktop_config.json`）を開き�
 
 保存したらClaude Desktopを再起動してください。
 
-## 8. 使ってみる
+## 6. 使ってみる
 
 AIエージェントとの会話で、次のように話しかけてみてください。
 
@@ -260,8 +226,8 @@ AIエージェントに任せると楽な反面、そのままだと読みにく
 | 症状 | 原因・対処 |
 |---|---|
 | `node --version`が「command not found」になる | 手順3のNode.jsインストールがまだ。インストール後、ターミナルを一度閉じて開き直す |
-| ログイン時に「パスワードが違います」と出る | 手順6の補足を参照。Google/Appleでログインし直してみる |
-| 話しかけてもマップ操作をしてくれない | 手順7の登録が正しいか確認する。Claude Desktopは登録後に再起動が必要 |
+| ログイン時に「パスワードが違います」と出る | 手順4の補足を参照。Google/Appleでログインし直してみる |
+| 話しかけてもマップ操作をしてくれない | 手順5の登録が正しいか確認する。Claude Desktopは登録後に再起動が必要 |
 | マップの中身を教えてくれない・確認だけで止まる | 「読んでいいですか」の確認に「はい」と答えているか確認する |
 | 大きなマップをAIが読み込めない | 要素が数百を超えると`list_elements`の応答が大きくなり、一度に受け取れないことがある。AIエージェントによっては、いったんファイルに保存して必要な部分だけ読む形で対応する。頻繁に起きるならマップを分ける（最上位の要素を左スワイプすると、配下ごと独立したマップになる） |
 
@@ -284,12 +250,12 @@ AIエージェントに任せると楽な反面、そのままだと読みにく
 
 **(1) mmmサーバーを全フォルダ共通で使えるように登録し直す**
 
-手順7でClaude Codeに登録するとき、そのままだと今いるフォルダでしか
+手順5でClaude Codeに登録するとき、そのままだと今いるフォルダでしか
 `mmm`ツールが使えません。どのフォルダで`claude`を起動しても使えるように
 するには、`--scope user`を付けて登録します。
 
 ```bash
-claude mcp add mmm --scope user -- node <mmm_mcpのパス>/dist/src/server.js
+claude mcp add mmm --scope user -- npx -y mmm-mcp-server
 ```
 
 **(2) グローバルのCLAUDE.md（`~/.claude/CLAUDE.md`）に運用ルールを書く**
