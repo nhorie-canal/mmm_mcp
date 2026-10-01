@@ -35,9 +35,13 @@ export function registerDeleteElements(server: McpServer): void {
       assertCanEditMap(map, session);
       const levelsPath = levelsPathOf(map);
       const bodiesPath = bodiesPathOf(map);
-      assertLevelsRootExists(await levelsDocExists(client, levelsPath, "root"), map.header.title);
+      // 切替後はrootが無いマップを空のマップとして扱うので、この確認は切替前だけ。
+      const levelsOnly = await isLevelsOnly(client);
+      if (!levelsOnly) {
+        assertLevelsRootExists(await levelsDocExists(client, levelsPath, "root"), map.header.title);
+      }
 
-      if (await isLevelsOnly(client)) {
+      if (levelsOnly) {
         if (confirmed !== true) {
           const snapshot = await readLevelsSnapshot(client, levelsPath);
           const allTargets = new Set<string>();

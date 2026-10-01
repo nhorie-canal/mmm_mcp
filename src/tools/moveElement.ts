@@ -37,7 +37,11 @@ export function registerMoveElement(server: McpServer): void {
       assertCanEditMap(map, session);
       const levelsPath = levelsPathOf(map);
       const bodiesPath = bodiesPathOf(map);
-      assertLevelsRootExists(await levelsDocExists(client, levelsPath, "root"), map.header.title);
+      // 切替後はrootが無いマップを空のマップとして扱うので、この確認は切替前だけ。
+      const levelsOnly = await isLevelsOnly(client);
+      if (!levelsOnly) {
+        assertLevelsRootExists(await levelsDocExists(client, levelsPath, "root"), map.header.title);
+      }
 
       if (elementId === newParentElementId) {
         throw new Error("要素を自分自身の子にすることはできません。");
@@ -46,7 +50,7 @@ export function registerMoveElement(server: McpServer): void {
         throw new Error("afterElementIdにelementId自身は指定できません。");
       }
 
-      if (await isLevelsOnly(client)) {
+      if (levelsOnly) {
         let levelsPathResult: string | null = null;
         await client.runOptimistic(async () => {
           const snapshot = await readLevelsSnapshot(client, levelsPath);
