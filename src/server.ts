@@ -14,7 +14,7 @@ import { registerMoveElement } from "./tools/moveElement.js";
 const server = new McpServer(
   {
     name: "matryoshka-mindmap",
-    version: "0.1.2",
+    version: "0.1.3",
   },
   {
     instructions:

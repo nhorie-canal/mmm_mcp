@@ -1,18 +1,13 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getContext } from "../mcpContext.js";
-import { isLevelsOnly, readLevelsSnapshot } from "../domain/levelsMode.js";
-import { ancestorDetailsInLevels, buildLevelsDeleteWrites, locateInLevels, subtreeIdsInLevels } from "../domain/levelsOps.js";
+import { ancestorDetailsInLevels, buildLevelsDeleteWrites, locateInLevels, subtreeIdsInLevels, readLevelsSnapshot } from "../domain/levelsOps.js";
 import {
   resolveMap,
-  bodiesPathOf,
   levelsPathOf,
   formatPath,
   assertCanEditMap,
 } from "../domain/mapResolver.js";
-import { bodyFromFirestore, ancestorDetails, collectSubtreeIds } from "../domain/body.js";
-import { assertLevelsRootExists, levelsDocExists } from "../domain/levels.js";
-import { buildDeleteElementWrites } from "../domain/deleteElements.js";
 
 export function registerDeleteElements(server: McpServer): void {
   server.tool(
@@ -34,97 +29,22 @@ export function registerDeleteElements(server: McpServer): void {
       const map = await resolveMap(client, session, mapId);
       assertCanEditMap(map, session);
       const levelsPath = levelsPathOf(map);
-      const bodiesPath = bodiesPathOf(map);
-      // 切替後はrootが無いマップを空のマップとして扱うので、この確認は切替前だけ。
-      const levelsOnly = await isLevelsOnly(client);
-      if (!levelsOnly) {
-        assertLevelsRootExists(await levelsDocExists(client, levelsPath, "root"), map.header.title);
-      }
-
-      if (levelsOnly) {
-        if (confirmed !== true) {
-          const snapshot = await readLevelsSnapshot(client, levelsPath);
-          const allTargets = new Set<string>();
-          const targets: Array<{ elementId: string; path: string; subtreeCount: number }> = [];
-          for (const elementId of elementIds) {
-            if (!locateInLevels(snapshot, elementId)) {
-              throw new Error(
-                `elementId(${elementId})がこのマップに見つかりません。list_elementsで確認してください。`
-              );
-            }
-            const subtree = subtreeIdsInLevels(snapshot, elementId);
-            for (const id of subtree) allTargets.add(id);
-            targets.push({
-              elementId,
-              path: formatPath(map.header.title, ancestorDetailsInLevels(snapshot, elementId)),
-              subtreeCount: subtree.length,
-            });
-          }
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(
-                  {
-                    confirmationRequired: true,
-                    message:
-                      "削除は取り返しがつきません。以下の内容をユーザーに提示して明示的な同意を得てから、" +
-                      "confirmed: trueで呼び直してください。",
-                    targets,
-                    totalElementCount: allTargets.size,
-                  },
-                  null,
-                  2
-                ),
-              },
-            ],
-          };
-        }
-
-        const levelsDeleted: Array<{ elementId: string; path: string; subtreeCount: number }> = [];
-        let levelsTotal = 0;
-        await client.runOptimistic(async () => {
-          levelsDeleted.length = 0;
-          const snapshot = await readLevelsSnapshot(client, levelsPath);
-          for (const elementId of elementIds) {
-            if (!locateInLevels(snapshot, elementId)) continue; // 既に削除済み(リトライ時など)
-            levelsDeleted.push({
-              elementId,
-              path: formatPath(map.header.title, ancestorDetailsInLevels(snapshot, elementId)),
-              subtreeCount: subtreeIdsInLevels(snapshot, elementId).length,
-            });
-          }
-          const { writes, deletedIds } = buildLevelsDeleteWrites(levelsPath, snapshot, elementIds);
-          levelsTotal = deletedIds.size;
-          return writes;
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify({ deleted: levelsDeleted, totalElementCount: levelsTotal }, null, 2),
-            },
-          ],
-        };
-      }
 
       if (confirmed !== true) {
-        const existingDocs = await client.listDocuments(bodiesPath);
-        const existingBodies = existingDocs.map((d) => bodyFromFirestore(d.id, d.data, d.updateTime));
-        const byId = new Map(existingBodies.map((b) => [b.id, b]));
+        const snapshot = await readLevelsSnapshot(client, levelsPath);
         const allTargets = new Set<string>();
         const targets: Array<{ elementId: string; path: string; subtreeCount: number }> = [];
         for (const elementId of elementIds) {
-          if (!byId.has(elementId)) {
+          if (!locateInLevels(snapshot, elementId)) {
             throw new Error(
               `elementId(${elementId})がこのマップに見つかりません。list_elementsで確認してください。`
             );
           }
-          const subtree = collectSubtreeIds(existingBodies, elementId);
+          const subtree = subtreeIdsInLevels(snapshot, elementId);
           for (const id of subtree) allTargets.add(id);
           targets.push({
             elementId,
-            path: formatPath(map.header.title, ancestorDetails(existingBodies, elementId)),
+            path: formatPath(map.header.title, ancestorDetailsInLevels(snapshot, elementId)),
             subtreeCount: subtree.length,
           });
         }
@@ -149,39 +69,28 @@ export function registerDeleteElements(server: McpServer): void {
         };
       }
 
-      const deletedPaths: Array<{ elementId: string; path: string; subtreeCount: number }> = [];
-      let totalDeleted = 0;
+      const levelsDeleted: Array<{ elementId: string; path: string; subtreeCount: number }> = [];
+      let levelsTotal = 0;
       await client.runOptimistic(async () => {
-        deletedPaths.length = 0;
-        totalDeleted = 0;
-        const currentDocs = await client.listDocuments(bodiesPath);
-        const currentBodies = currentDocs.map((d) => bodyFromFirestore(d.id, d.data, d.updateTime));
-
+        levelsDeleted.length = 0;
+        const snapshot = await readLevelsSnapshot(client, levelsPath);
         for (const elementId of elementIds) {
-          if (!currentBodies.some((b) => b.id === elementId)) continue; // 既に削除済み(リトライ時など)
-          deletedPaths.push({
+          if (!locateInLevels(snapshot, elementId)) continue; // 既に削除済み(リトライ時など)
+          levelsDeleted.push({
             elementId,
-            path: formatPath(map.header.title, ancestorDetails(currentBodies, elementId)),
-            subtreeCount: collectSubtreeIds(currentBodies, elementId).length,
+            path: formatPath(map.header.title, ancestorDetailsInLevels(snapshot, elementId)),
+            subtreeCount: subtreeIdsInLevels(snapshot, elementId).length,
           });
         }
-
-        const { writes, deletedIds } = await buildDeleteElementWrites(
-          client,
-          bodiesPath,
-          levelsPath,
-          currentBodies,
-          elementIds
-        );
-        totalDeleted = deletedIds.size;
+        const { writes, deletedIds } = buildLevelsDeleteWrites(levelsPath, snapshot, elementIds);
+        levelsTotal = deletedIds.size;
         return writes;
       });
-
       return {
         content: [
           {
             type: "text",
-            text: JSON.stringify({ deleted: deletedPaths, totalElementCount: totalDeleted }, null, 2),
+            text: JSON.stringify({ deleted: levelsDeleted, totalElementCount: levelsTotal }, null, 2),
           },
         ],
       };

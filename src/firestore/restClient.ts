@@ -50,7 +50,7 @@ const COMMIT_CHUNK_SIZE = 400;
 
 /** 書き込み系ツールで使う、1件分の更新指示。 */
 export interface FirestoreWrite {
-  /** ドキュメントの完全パス(例: "users/uid/headers/hid/bodies/bid")。 */
+  /** ドキュメントの完全パス(例: "users/uid/headers/hid/levels/root")。 */
   path: string;
   /** このフィールドだけを部分更新する。delete/arrayUnionが指定されているときは無視される。 */
   fields?: Record<string, unknown>;
@@ -78,46 +78,6 @@ export interface FirestoreWrite {
    * 作られていればFAILED_PRECONDITIONで失敗させる。[requireUpdateTime]と同時には使わない。
    */
   requireMissing?: boolean;
-}
-
-/**
- * 同じドキュメントを指す書き込みを1件にまとめる。
- *
- * **1回のcommitに同じpathの書き込みを2つ以上積んではいけない。** Firestoreは
- * エラーにせず順に適用するため、後の書き込みが前の書き込みを打ち消す。
- * 実データで2度踏んだ(move_elementで要素が重複、delete_elementsで存在しない
- * IDを指すポインタが残る)。writesを返す直前に必ずこれを通すこと。
- *
- * deleteが1つでもあればdeleteが勝つ(消すドキュメントへの部分更新は無意味)。
- * fields同士はマージし、requireUpdateTimeは最初に読み取った値を残す。
- */
-export function mergeWritesByPath(writes: FirestoreWrite[]): FirestoreWrite[] {
-  const byPath = new Map<string, FirestoreWrite>();
-  const order: string[] = [];
-  for (const write of writes) {
-    const prev = byPath.get(write.path);
-    if (!prev) {
-      byPath.set(write.path, { ...write });
-      order.push(write.path);
-      continue;
-    }
-    if (write.delete || prev.delete) {
-      byPath.set(write.path, { path: write.path, delete: true });
-      continue;
-    }
-    if (write.arrayUnion || prev.arrayUnion) {
-      // 配列追記と通常の更新は混ぜられない。後から積んだ方を採る。
-      byPath.set(write.path, { ...write });
-      continue;
-    }
-    byPath.set(write.path, {
-      path: write.path,
-      fields: { ...(prev.fields ?? {}), ...(write.fields ?? {}) },
-      requireUpdateTime: prev.requireUpdateTime ?? write.requireUpdateTime,
-      requireMissing: prev.requireMissing ?? write.requireMissing,
-    });
-  }
-  return order.map((path) => byPath.get(path)!);
 }
 
 export class FirestoreRestClient {

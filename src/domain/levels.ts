@@ -7,27 +7,14 @@
 // levelIdはマップ最上位が'root'、それ以外はその要素自身のid。配列の並び順が
 // そのまま兄弟順。子を持つ要素だけドキュメントが存在する(無ければ葉)。
 //
-// MCPは「新形式のみ対応」(移行ロジックはDart側だけに持たせる)。levels/root
-// が無いマップに対する操作は、切替前(bodiesとlevelsの両方へ書く間)だけ、
-// アプリで一度開いてもらうよう案内して止める。切替後は空のマップとして扱う
-// (levelsMode.tsのreadLevelsSnapshot)。
+// 書き込みは levelsOps.ts が行う。ここはデータ形状の解釈と読み取りだけを持つ。
 
-import type { FirestoreRestClient, FirestoreWrite } from "../firestore/restClient.js";
+import type { FirestoreRestClient } from "../firestore/restClient.js";
 
 export interface LevelChildEntry {
   id: string;
   detail: string;
   done: boolean;
-}
-
-export class LevelsNotInitializedError extends Error {
-  constructor(title: string) {
-    super(
-      `「${title}」はまだ新形式(levels)のデータがありません。` +
-        "お手数ですが、アプリでこのマップを一度開いてから、もう一度お試しください。"
-    );
-    this.name = "LevelsNotInitializedError";
-  }
 }
 
 function toEntry(raw: unknown): LevelChildEntry | null {
@@ -65,39 +52,6 @@ export async function readAllLevelDocs(
   return result;
 }
 
-/** levels/rootが無ければ、アプリで開いてもらうよう案内して止める。 */
-export function assertLevelsInitialized(
-  levelsById: Map<string, LevelChildEntry[]>,
-  mapTitle: string
-): void {
-  if (!levelsById.has("root")) {
-    throw new LevelsNotInitializedError(mapTitle);
-  }
-}
-
-/**
- * [levelId]のlevelsドキュメントが存在するかだけを軽く確認する。
- * 「levels/rootが無ければ止める」ような存在チェックのためだけに
- * readAllLevelDocs(コレクション全体のページング読み取り)を使うのは、
- * 子を多く持つ大きなマップほど無駄が大きい。1件のgetDocumentで足りる
- * 場面(list_elementsのようにツリー全体が実際に必要な場合を除く)は
- * こちらを使うこと。
- */
-export async function levelsDocExists(
-  client: FirestoreRestClient,
-  levelsPath: string,
-  levelId: string
-): Promise<boolean> {
-  return (await client.getDocument(`${levelsPath}/${levelId}`)) !== null;
-}
-
-/** [levelsDocExists]の結果を見て、levels/rootが無ければ止める。 */
-export function assertLevelsRootExists(rootExists: boolean, mapTitle: string): void {
-  if (!rootExists) {
-    throw new LevelsNotInitializedError(mapTitle);
-  }
-}
-
 export interface ElementNode {
   id: string;
   detail: string;
@@ -107,9 +61,8 @@ export interface ElementNode {
 }
 
 /**
- * 'root'から再帰的にlevelsを展開してツリーを組み立てる(bodies版buildTreeの
- * levels版)。levelsは配列そのものが順序を表すため、連結リストの再構築や
- * 分断の復元は不要。循環参照だけは防御的に検出して打ち切る。
+ * 'root'から再帰的にlevelsを展開してツリーを組み立てる。levelsは配列そのものが
+ * 順序を表すため、並び順の再構築は不要。循環参照だけは防御的に検出して打ち切る。
  */
 export function buildTreeFromLevels(levelsById: Map<string, LevelChildEntry[]>): ElementNode[] {
   function walk(levelId: string, parentId: string | null, ancestry: Set<string>): ElementNode[] {
@@ -136,183 +89,4 @@ export interface AppendableNode {
   detail: string;
   done: boolean;
   parentId: string | null;
-}
-
-/**
- * forest(bodies用のbuildAppendWritesと同じ入力)から、levels側の書き込み
- * 一覧を組み立てる。forest内で子を持つノードごとに levels/{id} を新規作成し、
- * forestの最上位(ルート)群は挿入先(targetParentId ?? 'root')の既存配列へ
- * 追記する。[targetHasExistingChildren]は、bodies側でlastChildOfが返した
- * 値がnullでなかったか(＝挿入先が既に子を持っていたか)をそのまま渡すこと。
- */
-export function buildAppendLevelWrites(
-  levelsPath: string,
-  forest: AppendableNode[],
-  targetParentId: string | null,
-  targetHasExistingChildren: boolean,
-  isTodo: boolean
-): FirestoreWrite[] {
-  const writes: FirestoreWrite[] = [];
-  const byParent = new Map<string | null, AppendableNode[]>();
-  for (const node of forest) {
-    const list = byParent.get(node.parentId) ?? [];
-    list.push(node);
-    byParent.set(node.parentId, list);
-  }
-
-  const entryOf = (node: AppendableNode) => ({
-    id: node.id,
-    detail: node.detail,
-    done: isTodo ? node.done : false,
-  });
-
-  // forest内で子を持つノードは全て新規作成なので、既存のlevels/{id}と
-  // 衝突することはない(既存ドキュメントは無いはず)。
-  for (const [parentId, children] of byParent) {
-    if (parentId === null) continue; // ルート群は下で挿入先へ追記する
-    writes.push({
-      path: `${levelsPath}/${parentId}`,
-      fields: { children: children.map(entryOf) },
-    });
-  }
-
-  const roots = byParent.get(null) ?? [];
-  if (roots.length > 0) {
-    const targetLevelId = targetParentId ?? "root";
-    if (targetHasExistingChildren) {
-      writes.push({
-        path: `${levelsPath}/${targetLevelId}`,
-        arrayUnion: { field: "children", values: roots.map(entryOf) },
-      });
-    } else {
-      writes.push({
-        path: `${levelsPath}/${targetLevelId}`,
-        fields: { children: roots.map(entryOf) },
-      });
-    }
-  }
-
-  return writes;
-}
-
-/**
- * [levelId]のlevelsドキュメントのchildren配列から、idが[removeIds]に含まれる
- * エントリを取り除くFirestoreWriteを1件返す。ドキュメントが無ければ何もしない
- * (levelsはbest-effortの書き込みで、bodiesと食い違っていても実害は無いため)。
- * requireUpdateTimeで楽観的ロックする(呼び出し側はrunOptimisticで使うこと)。
- */
-export async function buildRemoveChildrenWrite(
-  client: FirestoreRestClient,
-  levelsPath: string,
-  levelId: string,
-  removeIds: string[]
-): Promise<FirestoreWrite | null> {
-  const doc = await client.getDocument(`${levelsPath}/${levelId}`);
-  if (!doc) return null;
-  const children = childrenOf(doc.data).filter((c) => !removeIds.includes(c.id));
-  return { path: `${levelsPath}/${levelId}`, fields: { children }, requireUpdateTime: doc.updateTime };
-}
-
-/**
- * [levelId]のlevelsドキュメントのchildren配列の[afterId]の直後(nullなら先頭)に
- * [entry]を挿入するFirestoreWriteを1件返す。ドキュメントが無ければ新規作成する
- * (この場合はrequireUpdateTimeを付けない = 何も無い前提で作成する)。[afterId]が
- * 見つからない場合は末尾に足す(Dart版LevelsRepository.insertChildと同じ方針)。
- */
-/**
- * [levelId]のchildrenの中で[entry]を一度取り除いてから、[afterId]の直後
- * (nullなら先頭)へ入れ直す書き込みを作る。同じ親の中での並べ替え専用。
- *
- * **remove用とinsert用の書き込みを別々に作って両方commitしてはいけない。**
- * どちらも「元のchildren」を読んでから組み立てるため、同じドキュメントへの
- * 書き込みが2つできて後勝ちになり、要素が重複する。
- */
-export async function buildReorderChildWrite(
-  client: FirestoreRestClient,
-  levelsPath: string,
-  levelId: string,
-  entry: LevelChildEntry,
-  afterId: string | null
-): Promise<FirestoreWrite> {
-  const doc = await client.getDocument(`${levelsPath}/${levelId}`);
-  const children = (doc ? childrenOf(doc.data) : []).filter((c) => c.id !== entry.id);
-  const insertIndex =
-    afterId === null
-      ? 0
-      : (() => {
-          const found = children.findIndex((c) => c.id === afterId);
-          return found === -1 ? children.length : found + 1;
-        })();
-  children.splice(Math.min(Math.max(insertIndex, 0), children.length), 0, entry);
-  return {
-    path: `${levelsPath}/${levelId}`,
-    fields: { children },
-    requireUpdateTime: doc?.updateTime,
-  };
-}
-
-export async function buildInsertChildWrite(
-  client: FirestoreRestClient,
-  levelsPath: string,
-  levelId: string,
-  entry: LevelChildEntry,
-  afterId: string | null
-): Promise<FirestoreWrite> {
-  const doc = await client.getDocument(`${levelsPath}/${levelId}`);
-  const children = doc ? childrenOf(doc.data) : [];
-  const insertIndex =
-    afterId === null
-      ? 0
-      : (() => {
-          const found = children.findIndex((c) => c.id === afterId);
-          return found === -1 ? children.length : found + 1;
-        })();
-  children.splice(Math.min(Math.max(insertIndex, 0), children.length), 0, entry);
-  return {
-    path: `${levelsPath}/${levelId}`,
-    fields: { children },
-    requireUpdateTime: doc?.updateTime,
-  };
-}
-
-/**
- * update_task_status用。[updates]を親ごとにグループ化し、levelsドキュメントを
- * 親ごとに1回だけ読んで該当エントリを書き換えた配列を書き戻すFirestoreWrite[]
- * を組み立てる(Dart版LevelsRepository.updateChildと同じ「読んで置換」方式)。
- * 該当ドキュメントや該当エントリが見つからない場合は、その分だけ静かに
- * スキップする(levelsはbest-effortの書き込みで、失敗しても実害は無いため)。
- */
-export async function buildUpdateEntryWrites(
-  client: FirestoreRestClient,
-  levelsPath: string,
-  updates: Array<{ parentId: string | null; elementId: string; patch: Partial<LevelChildEntry> }>
-): Promise<FirestoreWrite[]> {
-  const byLevelId = new Map<string, Array<{ elementId: string; patch: Partial<LevelChildEntry> }>>();
-  for (const update of updates) {
-    const levelId = update.parentId ?? "root";
-    const list = byLevelId.get(levelId) ?? [];
-    list.push({ elementId: update.elementId, patch: update.patch });
-    byLevelId.set(levelId, list);
-  }
-
-  const writes: FirestoreWrite[] = [];
-  for (const [levelId, group] of byLevelId) {
-    const doc = await client.getDocument(`${levelsPath}/${levelId}`);
-    if (!doc) continue;
-    const children = childrenOf(doc.data);
-    for (const { elementId, patch } of group) {
-      const index = children.findIndex((c) => c.id === elementId);
-      if (index === -1) continue;
-      children[index] = { ...children[index], ...patch };
-    }
-    // requireUpdateTime: 読み取り後に他の操作がこのlevelsドキュメントを
-    // 書き換えていた場合、この書き込みはFAILED_PRECONDITIONで失敗する
-    // (呼び出し側はrunOptimisticで読み取りからやり直すこと)。
-    writes.push({
-      path: `${levelsPath}/${levelId}`,
-      fields: { children },
-      requireUpdateTime: doc.updateTime,
-    });
-  }
-  return writes;
 }

@@ -1,18 +1,13 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getContext } from "../mcpContext.js";
-import { isLevelsOnly, readLevelsSnapshot } from "../domain/levelsMode.js";
-import { ancestorDetailsInLevels, buildLevelsPatchWrites } from "../domain/levelsOps.js";
+import { ancestorDetailsInLevels, buildLevelsPatchWrites, readLevelsSnapshot } from "../domain/levelsOps.js";
 import {
   resolveMap,
-  bodiesPathOf,
   levelsPathOf,
   formatPath,
   assertCanEditMap,
 } from "../domain/mapResolver.js";
-import { bodyFromFirestore, ancestorDetails } from "../domain/body.js";
-import { mergeWritesByPath, type FirestoreWrite } from "../firestore/restClient.js";
-import { assertLevelsRootExists, buildUpdateEntryWrites, levelsDocExists } from "../domain/levels.js";
 
 export function registerEditElement(server: McpServer): void {
   server.tool(
@@ -29,58 +24,23 @@ export function registerEditElement(server: McpServer): void {
       const map = await resolveMap(client, session, mapId);
       assertCanEditMap(map, session);
       const levelsPath = levelsPathOf(map);
-      const bodiesPath = bodiesPathOf(map);
 
-      if (await isLevelsOnly(client)) {
-        let levelsPathResult: string | null = null;
-        await client.runOptimistic(async () => {
-          const snapshot = await readLevelsSnapshot(client, levelsPath);
-          const { writes, found } = buildLevelsPatchWrites(levelsPath, snapshot, [
-            { elementId, patch: { detail } },
-          ]);
-          if (!found.has(elementId)) {
-            throw new Error(
-              `elementId(${elementId})がこのマップに見つかりません。list_elementsで確認してください。`
-            );
-          }
-          levelsPathResult = formatPath(map.header.title, ancestorDetailsInLevels(snapshot, elementId));
-          return writes;
-        });
-        return {
-          content: [{ type: "text", text: JSON.stringify({ path: levelsPathResult }, null, 2) }],
-        };
-      }
-
-      assertLevelsRootExists(await levelsDocExists(client, levelsPath, "root"), map.header.title);
-
-      let path: string | null = null;
+      let levelsPathResult: string | null = null;
       await client.runOptimistic(async () => {
-        const bodyDoc = await client.getDocument(`${bodiesPath}/${elementId}`);
-        if (!bodyDoc) {
+        const snapshot = await readLevelsSnapshot(client, levelsPath);
+        const { writes, found } = buildLevelsPatchWrites(levelsPath, snapshot, [
+          { elementId, patch: { detail } },
+        ]);
+        if (!found.has(elementId)) {
           throw new Error(
             `elementId(${elementId})がこのマップに見つかりません。list_elementsで確認してください。`
           );
         }
-        const body = bodyFromFirestore(elementId, bodyDoc.data, bodyDoc.updateTime);
-        const existingDocs = await client.listDocuments(bodiesPath);
-        const existingBodies = existingDocs.map((d) => bodyFromFirestore(d.id, d.data, d.updateTime));
-        path = formatPath(map.header.title, ancestorDetails(existingBodies, elementId));
-
-        const writes: FirestoreWrite[] = [
-          {
-            path: `${bodiesPath}/${elementId}`,
-            fields: { detail },
-            requireUpdateTime: body.updateTime,
-          },
-        ];
-        const levelWrites = await buildUpdateEntryWrites(client, levelsPath, [
-          { parentId: body.parent, elementId, patch: { detail } },
-        ]);
-        return mergeWritesByPath([...writes, ...levelWrites]);
+        levelsPathResult = formatPath(map.header.title, ancestorDetailsInLevels(snapshot, elementId));
+        return writes;
       });
-
       return {
-        content: [{ type: "text", text: JSON.stringify({ path }, null, 2) }],
+        content: [{ type: "text", text: JSON.stringify({ path: levelsPathResult }, null, 2) }],
       };
     }
   );

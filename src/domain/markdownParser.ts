@@ -125,33 +125,32 @@ export function parseMarkdownForImport(
 }
 
 function buildRelations(nodes: MarkdownNode[]): void {
-  if (nodes.length === 0) return;
+  // 親は「自分より字下げが浅い直近の要素」とする。字下げの幅(2・4・タブ)は
+  // 浅い深いの比較にしか使わないので、刻み幅が混ざっても同じ結果になる。
+  // 段を飛ばした字下げ(`#`の直下の`-`、字下げのばらつき)でも必ず
+  // どこかへ繋がり、親も前の兄弟も無い要素ができない。
 
-  const uniqueIndents = [...new Set(nodes.map((n) => n.rawIndent))].sort((a, b) => a - b);
-  const indentToDepth = new Map<number, number>();
-  uniqueIndents.forEach((indent, i) => indentToDepth.set(indent, i));
-
-  const lastNodeAtDepth = new Map<number, string>();
-  const byId = new Map(nodes.map((n) => [n.id, n]));
+  // 祖先の並び。末尾が直前の要素で、字下げは末尾ほど深い。
+  const ancestors: MarkdownNode[] = [];
+  // 親のID(最上位はnull)ごとの、いちばん後ろの子。
+  const lastChildOf = new Map<string | null, MarkdownNode>();
 
   for (const node of nodes) {
-    const depth = indentToDepth.get(node.rawIndent) ?? 0;
+    while (ancestors.length > 0 && ancestors[ancestors.length - 1].rawIndent >= node.rawIndent) {
+      ancestors.pop();
+    }
+    const parent = ancestors.length > 0 ? ancestors[ancestors.length - 1] : null;
+    node.parentId = parent?.id ?? null;
 
-    if (depth > 0) {
-      node.parentId = lastNodeAtDepth.get(depth - 1) ?? null;
+    const prev = lastChildOf.get(node.parentId);
+    if (prev !== undefined) {
+      node.prevId = prev.id;
+      prev.nextId = node.id;
+    } else if (parent !== null) {
+      parent.childId = node.id;
     }
 
-    const prevId = lastNodeAtDepth.get(depth);
-    if (prevId !== undefined) {
-      node.prevId = prevId;
-      byId.get(prevId)!.nextId = node.id;
-    } else if (node.parentId !== null) {
-      byId.get(node.parentId)!.childId = node.id;
-    }
-
-    lastNodeAtDepth.set(depth, node.id);
-    for (const key of [...lastNodeAtDepth.keys()]) {
-      if (key > depth) lastNodeAtDepth.delete(key);
-    }
+    lastChildOf.set(node.parentId, node);
+    ancestors.push(node);
   }
 }

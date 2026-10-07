@@ -83,4 +83,31 @@ test("parseMarkdownForImport", async (t) => {
     assert.equal(nodes.length, 1);
     assert.equal(nodes[0].detail, "項目\n続きの文章");
   });
+  await t.test("段を飛ばした字下げでも、親も前の兄弟も無い要素を作らない", () => {
+    const outline = (markdown: string): string[] => {
+      const { nodes } = parseMarkdownForImport(markdown, { headingsAsNodes: true });
+      const heads = nodes.filter((n) => n.parentId === null && n.prevId === null);
+      assert.equal(heads.length, 1, `最上位の先頭が1つではない: ${markdown}`);
+      const lines: string[] = [];
+      const walk = (id: string | null, depth: number) => {
+        while (id !== null) {
+          const n = byId(nodes, id);
+          lines.push("  ".repeat(depth) + n.detail);
+          walk(n.childId, depth + 1);
+          id = n.nextId;
+        }
+      };
+      walk(heads[0].id, 0);
+      assert.equal(lines.length, nodes.length, `辿れない要素がある: ${markdown}`);
+      return lines;
+    };
+
+    // 字下げ 0・4・2。b は a の子、c は b の弟になる。
+    assert.deepEqual(outline("- a\n    - b\n  - c"), ["a", "  b", "  c"]);
+    // 最初の行だけ深い。a と b はどちらも最上位に並ぶ。
+    assert.deepEqual(outline("  - a\n- b"), ["a", "b"]);
+    // 見出しの直下のリストは、段が飛んでもその見出しの子になる。
+    assert.deepEqual(outline("# 題\n- a\n## 小\n- b"), ["題", "  a", "  小", "    b"]);
+    assert.deepEqual(outline("# A\n## B\n- x\n# C\n- y"), ["A", "  B", "    x", "C", "  y"]);
+  });
 });

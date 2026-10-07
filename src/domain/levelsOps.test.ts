@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import type { FirestoreWrite } from "../firestore/restClient.js";
+import type { FirestoreDoc, FirestoreRestClient, FirestoreWrite } from "../firestore/restClient.js";
 import {
   levelsSnapshotFromDocs,
   locateInLevels,
@@ -10,6 +10,7 @@ import {
   buildLevelsAppendWrites,
   buildLevelsMoveWrites,
   buildLevelsDeleteWrites,
+  readLevelsSnapshot,
 } from "./levelsOps.js";
 
 const LEVELS_PATH = "users/u/headers/h/levels";
@@ -21,7 +22,6 @@ function snapshot(levels: Record<string, string[]>, done: string[] = []) {
       id,
       data: {
         children: ids.map((c) => ({ id: c, detail: c.toUpperCase(), done: done.includes(c) })),
-        ...(id === "root" ? { migrated: true } : {}),
       },
       updateTime: `t-${id}`,
     }))
@@ -186,4 +186,39 @@ test("buildLevelsDeleteWrites: 子が0件になった親の子一覧は消す。
   assert.equal(inner.get("a")!.delete, true);
   const top = byPath(buildLevelsDeleteWrites(LEVELS_PATH, snap, ["a"]).writes);
   assert.deepEqual(childIds(top.get("root")), []);
+});
+
+/** listDocumentsだけを持つ手書きの偽クライアント。levelsコレクションの中身を返す。 */
+function fakeLevelsClient(docs: FirestoreDoc[]): FirestoreRestClient {
+  return {
+    async listDocuments(): Promise<FirestoreDoc[]> {
+      return docs;
+    },
+  } as unknown as FirestoreRestClient;
+}
+
+test("readLevelsSnapshot: levels/rootが無いマップは空のマップとして読む", async () => {
+  // 切替後はアプリで開いてもrootが作られないため、「アプリで開いて」と止めると
+  // 中身の無い古いマップへ永久に書き込めなくなる。
+  const snapshot = await readLevelsSnapshot(fakeLevelsClient([]), "users/u/headers/h/levels");
+  assert.equal(snapshot.size, 0);
+});
+
+test("readLevelsSnapshot: rootが無いマップへの追加は、rootを新規作成する書き込みになる", async () => {
+  const levelsPath = "users/u/headers/h/levels";
+  const snapshot = await readLevelsSnapshot(fakeLevelsClient([]), levelsPath);
+  const writes = buildLevelsAppendWrites(
+    levelsPath,
+    snapshot,
+    [{ id: "a", detail: "最初の要素", done: false, parentId: null }],
+    null,
+    false
+  );
+  assert.deepEqual(writes, [
+    {
+      path: `${levelsPath}/root`,
+      fields: { children: [{ id: "a", detail: "最初の要素", done: false }] },
+      requireMissing: true,
+    },
+  ]);
 });

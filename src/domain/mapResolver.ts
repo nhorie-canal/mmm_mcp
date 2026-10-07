@@ -45,11 +45,7 @@ export async function resolveMap(
   throw new MapNotFoundError(mapId);
 }
 
-export function bodiesPathOf(map: ResolvedMap): string {
-  return `users/${map.ownerUid}/headers/${map.headerId}/bodies`;
-}
-
-/** levels移行: bodiesPathOfと対になる、階層ごとの子一覧を配列で持つ新形式コレクション。 */
+/** マップの中身(階層ごとの子一覧を配列で持つコレクション)のパス。 */
 export function levelsPathOf(map: ResolvedMap): string {
   return `users/${map.ownerUid}/headers/${map.headerId}/levels`;
 }

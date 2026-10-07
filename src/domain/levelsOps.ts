@@ -1,5 +1,4 @@
-// levels移行・切替後(config/app.migrationEnabled が true)の書き込み。
-// bodiesを一切読まず書かず、levelsコレクションだけで要素を探して書き換える。
+// levelsコレクションの読み取り結果から、要素を探して書き換える書き込みを組み立てる。
 //
 // どの操作も「levels全件の読み取り結果(LevelsSnapshot)」を受け取る純粋関数で、
 // 触った子一覧を作業用に複製して編集し、最後に元の状態との差分から
@@ -9,7 +8,7 @@
 // 子を持たなくなった要素の子一覧ドキュメントは消す(アプリのprojectLevelsと
 // 同じ扱い)。rootだけは空配列で残す。
 
-import type { FirestoreDoc, FirestoreWrite } from "../firestore/restClient.js";
+import type { FirestoreDoc, FirestoreRestClient, FirestoreWrite } from "../firestore/restClient.js";
 import { childrenOf, type AppendableNode, type LevelChildEntry } from "./levels.js";
 
 export interface LevelDocState {
@@ -22,6 +21,19 @@ export type LevelsSnapshot = Map<string, LevelDocState>;
 
 export function levelsSnapshotFromDocs(docs: FirestoreDoc[]): LevelsSnapshot {
   return new Map(docs.map((d) => [d.id, { children: childrenOf(d.data), updateTime: d.updateTime }]));
+}
+
+/**
+ * levels全件を読む。levels/rootが無いマップは空のマップとして扱う
+ * (rootへの最初の書き込みは、存在しないことを前提条件にした新規作成になる)。
+ * アプリで開いてもrootは作られないので、無いときに止めると中身の無い古い
+ * マップへ永久に書き込めなくなる。
+ */
+export async function readLevelsSnapshot(
+  client: FirestoreRestClient,
+  levelsPath: string
+): Promise<LevelsSnapshot> {
+  return levelsSnapshotFromDocs(await client.listDocuments(levelsPath));
 }
 
 export interface LevelsLocation {

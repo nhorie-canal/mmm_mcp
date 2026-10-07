@@ -1,20 +1,14 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { mergeWritesByPath } from "../firestore/restClient.js";
 import { getContext } from "../mcpContext.js";
-import { isLevelsOnly, readLevelsSnapshot } from "../domain/levelsMode.js";
-import { ancestorDetailsInLevels, buildLevelsAppendWrites, locateInLevels } from "../domain/levelsOps.js";
+import { ancestorDetailsInLevels, buildLevelsAppendWrites, locateInLevels, readLevelsSnapshot } from "../domain/levelsOps.js";
 import {
   resolveMap,
-  bodiesPathOf,
   levelsPathOf,
   formatPath,
   assertCanEditMap,
 } from "../domain/mapResolver.js";
-import { bodyFromFirestore, ancestorDetails } from "../domain/body.js";
-import { buildAppendWrites } from "../domain/appendForest.js";
 import { parseMarkdownForImport } from "../domain/markdownParser.js";
-import { assertLevelsRootExists, buildAppendLevelWrites, levelsDocExists } from "../domain/levels.js";
 
 export function registerImportMarkdownContext(server: McpServer): void {
   server.tool(
@@ -38,7 +32,6 @@ export function registerImportMarkdownContext(server: McpServer): void {
       const map = await resolveMap(client, session, mapId);
       assertCanEditMap(map, session);
       const levelsPath = levelsPathOf(map);
-      const bodiesPath = bodiesPathOf(map);
       const targetParentId = parentElementId ?? null;
 
       const parsed = parseMarkdownForImport(markdown, { headingsAsNodes: true });
@@ -46,85 +39,25 @@ export function registerImportMarkdownContext(server: McpServer): void {
         throw new Error("Markdownからリスト項目・見出しが見つかりませんでした。");
       }
 
-      if (await isLevelsOnly(client)) {
-        let levelsPathResult = "";
-        await client.runOptimistic(async () => {
-          const snapshot = await readLevelsSnapshot(client, levelsPath);
-          if (targetParentId !== null && !locateInLevels(snapshot, targetParentId)) {
-            throw new Error(
-              `parentElementId(${targetParentId})がこのマップに見つかりません。list_elementsで確認してください。`
-            );
-          }
-          levelsPathResult = formatPath(map.header.title, ancestorDetailsInLevels(snapshot, targetParentId));
-          return buildLevelsAppendWrites(levelsPath, snapshot, parsed.nodes, targetParentId, map.header.isTodo);
-        });
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(
-                {
-                  path: levelsPathResult,
-                  addedElementCount: parsed.nodes.length,
-                  checkboxIgnored: !map.header.isTodo && parsed.hasCheckbox,
-                },
-                null,
-                2
-              ),
-            },
-          ],
-        };
-      }
-
-      // 読み取り(bodies一覧・levels存在確認)から書き込みまでを楽観的
-      // ロックでまとめる。読み取り後に対象ドキュメントが他から変更される
-      // とコミットがFAILED_PRECONDITIONになり、読み取りからやり直す。
-      let createdIds: string[] = [];
-      let existingBodiesForPath: ReturnType<typeof bodyFromFirestore>[] = [];
+      let levelsPathResult = "";
       await client.runOptimistic(async () => {
-        assertLevelsRootExists(await levelsDocExists(client, levelsPath, "root"), map.header.title);
-        const existingDocs = await client.listDocuments(bodiesPath);
-        const existingBodies = existingDocs.map((d) => bodyFromFirestore(d.id, d.data, d.updateTime));
-        existingBodiesForPath = existingBodies;
-
-        if (targetParentId !== null && !existingBodies.some((b) => b.id === targetParentId)) {
+        const snapshot = await readLevelsSnapshot(client, levelsPath);
+        if (targetParentId !== null && !locateInLevels(snapshot, targetParentId)) {
           throw new Error(
             `parentElementId(${targetParentId})がこのマップに見つかりません。list_elementsで確認してください。`
           );
         }
-        const { writes, createdIds: ids } = buildAppendWrites(
-          bodiesPath,
-          existingBodies,
-          parsed.nodes,
-          targetParentId,
-          map.header.isTodo
-        );
-        createdIds = ids;
-        // 挿入先のlevelsドキュメントが実際に存在するかを直接確認する
-        // (bodies側の状態から推測すると、levelsとbodiesが食い違っている
-        // 場合にarrayUnion書き込みが「ドキュメントが無い」で失敗しうるため)。
-        const targetLevelId = targetParentId ?? "root";
-        const targetHasLevelsDoc =
-          targetLevelId === "root" || (await levelsDocExists(client, levelsPath, targetLevelId));
-        const levelWrites = buildAppendLevelWrites(
-          levelsPath,
-          parsed.nodes,
-          targetParentId,
-          targetHasLevelsDoc,
-          map.header.isTodo
-        );
-        return mergeWritesByPath([...writes, ...levelWrites]);
+        levelsPathResult = formatPath(map.header.title, ancestorDetailsInLevels(snapshot, targetParentId));
+        return buildLevelsAppendWrites(levelsPath, snapshot, parsed.nodes, targetParentId, map.header.isTodo);
       });
-
-      const path = formatPath(map.header.title, ancestorDetails(existingBodiesForPath, targetParentId));
       return {
         content: [
           {
             type: "text",
             text: JSON.stringify(
               {
-                path,
-                addedElementCount: createdIds.length,
+                path: levelsPathResult,
+                addedElementCount: parsed.nodes.length,
                 checkboxIgnored: !map.header.isTodo && parsed.hasCheckbox,
               },
               null,

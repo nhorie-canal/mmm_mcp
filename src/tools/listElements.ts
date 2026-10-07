@@ -2,9 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getContext } from "../mcpContext.js";
 import { resolveMap, levelsPathOf } from "../domain/mapResolver.js";
-import { isLevelsOnly } from "../domain/levelsMode.js";
 import {
-  assertLevelsInitialized,
   buildTreeFromLevels,
   readAllLevelDocs,
   type ElementNode,
@@ -101,12 +99,8 @@ export function registerListElements(server: McpServer): void {
         }
       }
 
+      // levels/rootが無いマップは空のマップとして返す(アプリで開いてもrootは作られない)。
       const levelsById = await readAllLevelDocs(client, levelsPathOf(map));
-      // 切替前はrootが無ければ未移行(bodiesに中身があり得る)なので止める。
-      // 切替後はアプリで開いてもrootが作られないので、空のマップとして返す。
-      if (!(await isLevelsOnly(client))) {
-        assertLevelsInitialized(levelsById, map.header.title);
-      }
       const tree = buildTreeFromLevels(levelsById);
 
       return {
