@@ -20,7 +20,7 @@ Desktop・Claude Codeに限らず、MCPに対応したAIエージェントであ
 
 > **2026年9月30日より前に `git clone` で導入した方へ**: アプリ側のデータ形式の
 > 切り替えに伴い、古い版ではマップへの書き込みが失敗するようになります。下の手順5の
-> 登録を `npx -y mmm-mcp-server` に置き換えてください（ログインし直す必要はありません）。
+> 登録を `npx -y mmm-mcp-server@latest` に置き換えてください（ログインし直す必要はありません）。
 > clone したまま使い続ける場合は、`mmm_mcp` フォルダで `git pull && npm install && npm run build`
 > を実行してからAIエージェントを再起動してください。
 
@@ -98,7 +98,7 @@ Matryoshka Mind Mapアプリで普段どのログイン方法を使っている�
 ### Googleでログインしている場合
 
 ```bash
-npx -y -p mmm-mcp-server mmm-login login --method google
+npx -y -p mmm-mcp-server@latest mmm-login login --method google
 ```
 
 ブラウザが自動で開くので、いつも使っているGoogleアカウントでログインします。
@@ -106,7 +106,7 @@ npx -y -p mmm-mcp-server mmm-login login --method google
 ### Appleでログインしている場合
 
 ```bash
-npx -y -p mmm-mcp-server mmm-login login --method apple
+npx -y -p mmm-mcp-server@latest mmm-login login --method apple
 ```
 
 こちらもブラウザが自動で開くので、Apple IDでログインします。
@@ -114,7 +114,7 @@ npx -y -p mmm-mcp-server mmm-login login --method apple
 ### メールアドレスとパスワードでログインしている場合
 
 ```bash
-npx -y -p mmm-mcp-server mmm-login login --method email
+npx -y -p mmm-mcp-server@latest mmm-login login --method email
 ```
 
 メールアドレスとパスワードを聞かれるので入力してください（パスワードは
@@ -131,27 +131,27 @@ npx -y -p mmm-mcp-server mmm-login login --method email
 あなたのパソコンの中だけに、あなた以外読めない形で保存されます）。
 
 ```bash
-npx -y -p mmm-mcp-server mmm-login status
+npx -y -p mmm-mcp-server@latest mmm-login status
 ```
 
 でログイン状態を確認できます。ログアウトしたい場合は次のコマンドです。
 
 ```bash
-npx -y -p mmm-mcp-server mmm-login logout
+npx -y -p mmm-mcp-server@latest mmm-login logout
 ```
 
 ## 5. AIエージェントにMatryoshkaを教える
 
 ここでは動作確認済みのClaude Desktop / Claude Codeへの登録方法を示します。
 他のMCP対応クライアント（例: Codexなど）を使っている場合も、多くは同じように
-「サーバーを起動するコマンド」（`npx -y mmm-mcp-server`）をそのクライアントの
+「サーバーを起動するコマンド」（`npx -y mmm-mcp-server@latest`）をそのクライアントの
 MCPサーバー設定に登録するだけで使えるはずです。具体的な登録方法はお使いの
 クライアントのドキュメントを確認してください。
 
 ### Claude Codeを使っている場合
 
 ```bash
-claude mcp add mmm -- npx -y mmm-mcp-server
+claude mcp add mmm -- npx -y mmm-mcp-server@latest
 ```
 
 ### Claude Desktopを使っている場合
@@ -164,7 +164,7 @@ Claude Desktopの設定ファイル（`claude_desktop_config.json`）を開き�
   "mcpServers": {
     "mmm": {
       "command": "npx",
-      "args": ["-y", "mmm-mcp-server"]
+      "args": ["-y", "mmm-mcp-server@latest"]
     }
   }
 }
@@ -223,6 +223,42 @@ AIエージェントに任せると楽な反面、そのままだと読みにく
 - **時系列で並べる** … 作業の名前で並べるより、順に消していく形になるぶん、
   抜けに気づきやすくなります
 
+## 最新版にする
+
+手順5の登録が `mmm-mcp-server@latest` になっていれば、AIエージェントを起動するたびに
+最新版が使われるので、何もする必要はありません。
+
+`@latest` の付いていない `npx -y mmm-mcp-server` で登録した方は、最初に取得した古い版を
+使い続けていることがあります。次のように登録を書き換えてください（ログインし直す必要は
+ありません）。
+
+### Claude Codeを使っている場合
+
+登録を一度消してから、登録し直します。
+
+```bash
+claude mcp remove mmm
+```
+
+```bash
+claude mcp add mmm -- npx -y mmm-mcp-server@latest
+```
+
+`--scope user` で登録していた方は、消すときも登録するときも `--scope user` を付けます。
+
+```bash
+claude mcp remove mmm --scope user
+```
+
+```bash
+claude mcp add mmm --scope user -- npx -y mmm-mcp-server@latest
+```
+
+### Claude Desktopを使っている場合
+
+`claude_desktop_config.json` の `"args"` を `["-y", "mmm-mcp-server@latest"]` に書き換えて保存し、
+Claude Desktopを再起動してください。
+
 ## よくあるトラブル
 
 | 症状 | 原因・対処 |
@@ -257,7 +293,7 @@ AIエージェントに任せると楽な反面、そのままだと読みにく
 するには、`--scope user`を付けて登録します。
 
 ```bash
-claude mcp add mmm --scope user -- npx -y mmm-mcp-server
+claude mcp add mmm --scope user -- npx -y mmm-mcp-server@latest
 ```
 
 **(2) グローバルのCLAUDE.md（`~/.claude/CLAUDE.md`）に運用ルールを書く**
