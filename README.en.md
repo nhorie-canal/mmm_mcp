@@ -11,7 +11,7 @@ A tool that lets you read and write your own maps in Matryoshka Mind Map (a mind
 
 This tool runs entirely on your computer, with no always-on server. It starts only when needed and accesses your own maps with your own login credentials (the developer cannot see your data).
 
-> **For users who installed via `git clone` before September 30, 2026**: Due to a data format migration in the app, older versions will fail when writing to maps. Please replace the registration in Step 5 below with `npx -y mmm-mcp-server` (you do not need to log in again). If you want to keep using your cloned copy, run `git pull && npm install && npm run build` in the `mmm_mcp` folder and restart your AI agent.
+> **For users who installed via `git clone` before September 30, 2026**: Due to a data format migration in the app, older versions will fail when writing to maps. Please replace the registration in Step 5 below with `npx -y mmm-mcp-server@latest` (you do not need to log in again). If you want to keep using your cloned copy, run `git pull && npm install && npm run build` in the `mmm_mcp` folder and restart your AI agent.
 
 > This guide walks you through every step, starting with how to open the terminal (the window where you type commands), so that you can follow along even if you are not used to working with a computer.
 >
@@ -66,7 +66,7 @@ Choose one of the following three options based on how you usually log in to the
 ### If you log in with Google
 
 ```bash
-npx -y -p mmm-mcp-server mmm-login login --method google
+npx -y -p mmm-mcp-server@latest mmm-login login --method google
 ```
 
 Your browser opens automatically; log in with the Google account you usually use.
@@ -74,7 +74,7 @@ Your browser opens automatically; log in with the Google account you usually use
 ### If you log in with Apple
 
 ```bash
-npx -y -p mmm-mcp-server mmm-login login --method apple
+npx -y -p mmm-mcp-server@latest mmm-login login --method apple
 ```
 
 Your browser opens automatically; log in with your Apple ID.
@@ -82,7 +82,7 @@ Your browser opens automatically; log in with your Apple ID.
 ### If you log in with an email address and password
 
 ```bash
-npx -y -p mmm-mcp-server mmm-login login --method email
+npx -y -p mmm-mcp-server@latest mmm-login login --method email
 ```
 
 You will be asked for your email address and password (the password is not shown on screen).
@@ -92,23 +92,23 @@ You will be asked for your email address and password (the password is not shown
 Once you have logged in, you do not need to log in again each time (your credentials are stored only on your computer, in a form that only you can read).
 
 ```bash
-npx -y -p mmm-mcp-server mmm-login status
+npx -y -p mmm-mcp-server@latest mmm-login status
 ```
 
 shows your login status. To log out:
 
 ```bash
-npx -y -p mmm-mcp-server mmm-login logout
+npx -y -p mmm-mcp-server@latest mmm-login logout
 ```
 
 ## 5. Register It with Your AI Agent
 
-Below are the instructions for Claude Desktop and Claude Code, which have been tested. If you use another MCP-compatible client (e.g., Codex), in most cases you only need to register the server launch command (`npx -y mmm-mcp-server`) in that client's MCP server settings. See your client's documentation for the exact steps.
+Below are the instructions for Claude Desktop and Claude Code, which have been tested. If you use another MCP-compatible client (e.g., Codex), in most cases you only need to register the server launch command (`npx -y mmm-mcp-server@latest`) in that client's MCP server settings. See your client's documentation for the exact steps.
 
 ### Claude Code
 
 ```bash
-claude mcp add mmm -- npx -y mmm-mcp-server
+claude mcp add mmm -- npx -y mmm-mcp-server@latest
 ```
 
 ### Claude Desktop
@@ -120,7 +120,7 @@ Open the Claude Desktop configuration file (`claude_desktop_config.json`) and ad
   "mcpServers": {
     "mmm": {
       "command": "npx",
-      "args": ["-y", "mmm-mcp-server"]
+      "args": ["-y", "mmm-mcp-server@latest"]
     }
   }
 }
@@ -164,6 +164,38 @@ The reasons:
 - **Do not mix URLs with text**: A URL in the same element as other text is not treated as a link in the app, so tapping it does nothing.
 - **Chronological order**: Compared with ordering by task name, checking items off in order makes it easier to notice anything you missed.
 
+## Updating to the Latest Version
+
+If your registration in Step 5 uses `mmm-mcp-server@latest`, the latest version is used every time your AI agent starts, so there is nothing to do.
+
+If you registered with `npx -y mmm-mcp-server` (without `@latest`), you may still be running the old version that was downloaded the first time. Update the registration as follows (you do not need to log in again).
+
+### Claude Code
+
+Remove the registration, then register it again.
+
+```bash
+claude mcp remove mmm
+```
+
+```bash
+claude mcp add mmm -- npx -y mmm-mcp-server@latest
+```
+
+If you registered with `--scope user`, add `--scope user` to both commands.
+
+```bash
+claude mcp remove mmm --scope user
+```
+
+```bash
+claude mcp add mmm --scope user -- npx -y mmm-mcp-server@latest
+```
+
+### Claude Desktop
+
+Change `"args"` in `claude_desktop_config.json` to `["-y", "mmm-mcp-server@latest"]`, save it, and restart Claude Desktop.
+
 ## Troubleshooting
 
 | Symptom | Cause / Solution |
@@ -189,7 +221,7 @@ What follows is **just one example of how it can be used**. It is not a standard
 When registering with Claude Code in Step 5, the `mmm` tool is only available in the current folder by default. To use it no matter which folder you start `claude` in, register it with `--scope user`:
 
 ```bash
-claude mcp add mmm --scope user -- npx -y mmm-mcp-server
+claude mcp add mmm --scope user -- npx -y mmm-mcp-server@latest
 ```
 
 **(2) Write the workflow rules in your global CLAUDE.md (`~/.claude/CLAUDE.md`)**
