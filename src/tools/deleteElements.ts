@@ -1,10 +1,18 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getContext } from "../mcpContext.js";
-import { ancestorDetailsInLevels, buildLevelsDeleteWrites, locateInLevels, subtreeIdsInLevels, readLevelsSnapshot } from "../domain/levelsOps.js";
+import {
+  ancestorDetailsInLevels,
+  buildLevelsDeleteWrites,
+  locateInLevels,
+  subtreeIdsInLevels,
+  readLevelsSnapshot,
+  withLinkSummary,
+} from "../domain/levelsOps.js";
 import {
   resolveMap,
   levelsPathOf,
+  headerPathOf,
   formatPath,
   assertCanEditMap,
 } from "../domain/mapResolver.js";
@@ -84,7 +92,8 @@ export function registerDeleteElements(server: McpServer): void {
         }
         const { writes, deletedIds } = buildLevelsDeleteWrites(levelsPath, snapshot, elementIds);
         levelsTotal = deletedIds.size;
-        return writes;
+        // リンクの要約(header の linkCounts)が変わるときだけ、同じコミットで書き直す
+        return withLinkSummary(headerPathOf(map), levelsPath, snapshot, writes);
       });
       return {
         content: [

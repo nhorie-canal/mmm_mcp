@@ -1,4 +1,6 @@
 import { newDocId } from "./idGen.js";
+import type { ScheduleEntry } from "./levels.js";
+import { parseScheduleDate } from "./scheduleText.js";
 
 // lib/markdown/markdown_import_parser.dart のTypeScript移植。
 // アプリ本体のインポートと解析ロジックを一致させるため、構造・コメントも揃えている。
@@ -12,6 +14,8 @@ export interface MarkdownNode {
   prevId: string | null;
   nextId: string | null;
   childId: string | null;
+  /** 1行目の 📅(期日)・🛫(着手日)から読んだ日付。無ければundefined。 */
+  schedule?: ScheduleEntry;
 }
 
 export interface ParsedMarkdown {
@@ -23,6 +27,22 @@ export interface ParsedMarkdown {
 const LIST_PATTERN = /^(\s*)(?:[-*+]|\d+\.)\s+(.+)$/;
 const CHECKBOX_PATTERN = /^\[([ xX])\]\s*(.*)$/;
 const HEADING_PATTERN = /^(#{1,6})\s+(.*)$/;
+// Obsidian Tasks の書き方(docs/schedule.md §7)。時刻付きは日付のあとに続ける。
+const SCHEDULE_PATTERN = /\s*(📅|🛫)\s*(\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2})?)/gu;
+
+/** 要素の1行目から 📅・🛫 の日付を取り出す。読めない日付は本文に残す。 */
+function extractSchedule(detail: string): { detail: string; schedule?: ScheduleEntry } {
+  const schedule: ScheduleEntry = {};
+  const rest = detail.replace(SCHEDULE_PATTERN, (whole, mark: string, text: string) => {
+    try {
+      schedule[mark === "📅" ? "due" : "start"] = parseScheduleDate(text);
+      return "";
+    } catch {
+      return whole;
+    }
+  });
+  return schedule.due || schedule.start ? { detail: rest.trim(), schedule } : { detail };
+}
 
 /**
  * Markdownテキストを解析して取り込める形の[MarkdownNode]の並びにする。
@@ -76,15 +96,17 @@ export function parseMarkdownForImport(
         detail = checkboxMatch[2] ?? "";
       }
 
+      const extracted = extractSchedule(detail);
       currentNode = {
         id: newDocId(),
-        detail,
+        detail: extracted.detail,
         rawIndent: indent,
         done,
         parentId: null,
         prevId: null,
         nextId: null,
         childId: null,
+        ...(extracted.schedule ? { schedule: extracted.schedule } : {}),
       };
       nodes.push(currentNode);
       continue;

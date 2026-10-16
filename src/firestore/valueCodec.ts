@@ -7,6 +7,7 @@ export type FirestoreValue =
   | { integerValue: string }
   | { doubleValue: number }
   | { stringValue: string }
+  | { timestampValue: string }
   | { arrayValue: { values?: FirestoreValue[] } }
   | { mapValue: { fields?: Record<string, FirestoreValue> } };
 
@@ -25,6 +26,9 @@ export function encodeValue(value: unknown): FirestoreValue {
   if (typeof value === "string") {
     return { stringValue: value };
   }
+  if (value instanceof Date) {
+    return { timestampValue: value.toISOString() };
+  }
   if (Array.isArray(value)) {
     return { arrayValue: { values: value.map(encodeValue) } };
   }
@@ -41,6 +45,8 @@ export function decodeValue(value: FirestoreValue | undefined): unknown {
   if ("integerValue" in value) return Number(value.integerValue);
   if ("doubleValue" in value) return value.doubleValue;
   if ("stringValue" in value) return value.stringValue;
+  // RFC 3339。ナノ秒まで来ることがあるが、Dateはミリ秒までしか持たない
+  if ("timestampValue" in value) return new Date(value.timestampValue);
   if ("arrayValue" in value) {
     return (value.arrayValue.values ?? []).map(decodeValue);
   }

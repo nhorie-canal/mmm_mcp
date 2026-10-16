@@ -10,11 +10,12 @@ import { registerImportMarkdownContext } from "./tools/importMarkdownContext.js"
 import { registerEditElement } from "./tools/editElement.js";
 import { registerDeleteElements } from "./tools/deleteElements.js";
 import { registerMoveElement } from "./tools/moveElement.js";
+import { registerSetSchedule } from "./tools/setSchedule.js";
 
 const server = new McpServer(
   {
     name: "matryoshka-mindmap",
-    version: "0.1.3",
+    version: "0.2.0",
   },
   {
     instructions:
@@ -35,6 +36,7 @@ registerImportMarkdownContext(server);
 registerEditElement(server);
 registerDeleteElements(server);
 registerMoveElement(server);
+registerSetSchedule(server);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);

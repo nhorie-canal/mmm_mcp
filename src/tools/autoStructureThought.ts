@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getContext } from "../mcpContext.js";
+import { assertDetailLengths } from "../domain/detailLimit.js";
 import { ancestorDetailsInLevels, buildLevelsAppendWrites, locateInLevels, readLevelsSnapshot } from "../domain/levelsOps.js";
 import {
   resolveMap,
@@ -12,11 +13,16 @@ import { buildForestFromTree, type TreeInputNode } from "../domain/appendForest.
 
 const treeNodeSchema: z.ZodType<TreeInputNode> = z.lazy(() =>
   z.object({
-    detail: z.string().min(1).describe("要素の本文"),
+    detail: z.string().min(1).describe("要素の本文(1要素5000文字まで)"),
     done: z.boolean().optional().describe("TODOマップのときのチェック状態(省略時false)"),
     children: z.array(treeNodeSchema).optional().describe("この要素の内側に入れ子にする子要素"),
   })
 );
+
+/** [nodes]とその配下すべての本文。 */
+function allDetails(nodes: TreeInputNode[]): string[] {
+  return nodes.flatMap((node) => [node.detail, ...allDetails(node.children ?? [])]);
+}
 
 export function registerAutoStructureThought(server: McpServer): void {
   server.tool(
@@ -35,6 +41,7 @@ export function registerAutoStructureThought(server: McpServer): void {
       nodes: z.array(treeNodeSchema).min(1).describe("追加する階層構造(ルートの配列)"),
     },
     async ({ mapId, parentElementId, nodes }) => {
+      assertDetailLengths(allDetails(nodes));
       const { client, session } = getContext();
       const map = await resolveMap(client, session, mapId);
       assertCanEditMap(map, session);

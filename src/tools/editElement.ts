@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getContext } from "../mcpContext.js";
+import { assertDetailLengths } from "../domain/detailLimit.js";
 import { ancestorDetailsInLevels, buildLevelsPatchWrites, readLevelsSnapshot } from "../domain/levelsOps.js";
 import {
   resolveMap,
@@ -17,9 +18,10 @@ export function registerEditElement(server: McpServer): void {
     {
       mapId: z.string().describe("list_mapsで得たマップのID"),
       elementId: z.string().describe("list_elementsで得た要素のID"),
-      detail: z.string().min(1).describe("書き換え後の本文"),
+      detail: z.string().min(1).describe("書き換え後の本文(1要素5000文字まで)"),
     },
     async ({ mapId, elementId, detail }) => {
+      assertDetailLengths([detail]);
       const { client, session } = getContext();
       const map = await resolveMap(client, session, mapId);
       assertCanEditMap(map, session);
@@ -36,7 +38,10 @@ export function registerEditElement(server: McpServer): void {
             `elementId(${elementId})がこのマップに見つかりません。list_elementsで確認してください。`
           );
         }
-        levelsPathResult = formatPath(map.header.title, ancestorDetailsInLevels(snapshot, elementId));
+        // snapshotは書き込み前なので、末尾(この要素自身)だけ書き換え後の本文にする。
+        const chain = ancestorDetailsInLevels(snapshot, elementId);
+        chain[chain.length - 1] = detail;
+        levelsPathResult = formatPath(map.header.title, chain);
         return writes;
       });
       return {

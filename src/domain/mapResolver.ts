@@ -45,6 +45,11 @@ export async function resolveMap(
   throw new MapNotFoundError(mapId);
 }
 
+/** マップの header ドキュメントのパス。 */
+export function headerPathOf(map: ResolvedMap): string {
+  return `users/${map.ownerUid}/headers/${map.headerId}`;
+}
+
 /** マップの中身(階層ごとの子一覧を配列で持つコレクション)のパス。 */
 export function levelsPathOf(map: ResolvedMap): string {
   return `users/${map.ownerUid}/headers/${map.headerId}/levels`;

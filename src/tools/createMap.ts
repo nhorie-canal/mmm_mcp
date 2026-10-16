@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getContext } from "../mcpContext.js";
 import { newDocId } from "../domain/idGen.js";
+import { buildCreateMapWrites } from "../domain/headerOrder.js";
 
 export function registerCreateMap(server: McpServer): void {
   server.tool(
@@ -17,20 +18,14 @@ export function registerCreateMap(server: McpServer): void {
     async ({ title, isTodo }) => {
       const { client, session } = getContext();
 
-      const existing = await client.listDocuments(`users/${session.uid}/headers`);
-      const maxOrder = existing.reduce((max, doc) => Math.max(max, Number(doc.data.order ?? 0)), 0);
-
-      // 自前でIDを採番し、header本体と空のlevels/rootを1回のcommitWritesに
-      // まとめて作る(アプリの新規作成 header_add_model.dart と揃える)。
+      const headersPath = `users/${session.uid}/headers`;
+      // 振り直しは読んだ時点の updateTime を前提条件にするので、読んでから書くまでに
+      // ほかの端末で見出しが変わると失敗する。そのときは読み取りからやり直す。
+      // id はやり直しても同じものを使う(失敗した commit は何も書いていない)。
       const headerId = newDocId();
-      const headerPath = `users/${session.uid}/headers/${headerId}`;
-      await client.commitWrites([
-        {
-          path: headerPath,
-          fields: { title, order: maxOrder + 1, isTodo, editors: [], viewers: [] },
-        },
-        { path: `${headerPath}/levels/root`, fields: { children: [] } },
-      ]);
+      await client.runOptimistic(async () =>
+        buildCreateMapWrites(headersPath, await client.listDocuments(headersPath), headerId, title, isTodo)
+      );
 
       return {
         content: [

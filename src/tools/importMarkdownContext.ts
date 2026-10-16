@@ -9,6 +9,7 @@ import {
   assertCanEditMap,
 } from "../domain/mapResolver.js";
 import { parseMarkdownForImport } from "../domain/markdownParser.js";
+import { assertDetailLengths } from "../domain/detailLimit.js";
 
 export function registerImportMarkdownContext(server: McpServer): void {
   server.tool(
@@ -20,7 +21,7 @@ export function registerImportMarkdownContext(server: McpServer): void {
       "対象は既存マップのみ(新規作成が必要ならcreate_mapを先に呼ぶ)。",
     {
       mapId: z.string().describe("list_mapsで得たマップのID"),
-      markdown: z.string().min(1).describe("取り込むMarkdownテキスト"),
+      markdown: z.string().min(1).describe("取り込むMarkdownテキスト(1要素5000文字まで。超える要素があれば何も書かない)。要素の1行目に「📅 2026-10-15」(期日)・「🛫 2026-10-12」(着手日)と書くと日付として取り込む。時刻付きは「📅 2026-10-15 09:00」(このPCの現地時刻)"),
       parentElementId: z
         .string()
         .nullable()
@@ -38,6 +39,7 @@ export function registerImportMarkdownContext(server: McpServer): void {
       if (parsed.nodes.length === 0) {
         throw new Error("Markdownからリスト項目・見出しが見つかりませんでした。");
       }
+      assertDetailLengths(parsed.nodes.map((node) => node.detail));
 
       let levelsPathResult = "";
       await client.runOptimistic(async () => {

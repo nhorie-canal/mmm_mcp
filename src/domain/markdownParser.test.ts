@@ -111,3 +111,39 @@ test("parseMarkdownForImport", async (t) => {
     assert.deepEqual(outline("# A\n## B\n- x\n# C\n- y"), ["A", "  B", "    x", "C", "  y"]);
   });
 });
+
+test("parseMarkdownForImport: 期日(📅)・着手日(🛫)", async (t) => {
+  process.env.TZ = "Asia/Tokyo";
+  const parse = (text: string) => parseMarkdownForImport(text, { headingsAsNodes: true }).nodes;
+
+  await t.test("Obsidian Tasks の書き方を日付として読み、本文から取り除く", () => {
+    const [node] = parse("- [ ] 企画書を書く 🛫 2026-10-12 📅 2026-10-15");
+    assert.equal(node.detail, "企画書を書く");
+    assert.deepEqual(node.schedule, {
+      start: { at: new Date("2026-10-12T00:00:00Z"), allDay: true },
+      due: { at: new Date("2026-10-15T00:00:00Z"), allDay: true },
+    });
+  });
+
+  await t.test("時刻付きの期日は、日付のあとの時刻を PC の現地時刻として読む", () => {
+    const [node] = parse("- 会議 📅 2026-10-15 09:00");
+    assert.equal(node.detail, "会議");
+    assert.deepEqual(node.schedule, { due: { at: new Date("2026-10-15T00:00:00Z"), allDay: false } });
+  });
+
+  await t.test("日付の無い要素には schedule を付けない", () => {
+    assert.equal(parse("- 買い物")[0].schedule, undefined);
+  });
+
+  await t.test("読めない日付は本文に残す", () => {
+    const [node] = parse("- 予定 📅 2026-02-30");
+    assert.equal(node.detail, "予定 📅 2026-02-30");
+    assert.equal(node.schedule, undefined);
+  });
+
+  await t.test("継続行の中の印は日付として読まない", () => {
+    const [node] = parse("- メモ\n  📅 2026-10-15 と書いておく");
+    assert.equal(node.detail, "メモ\n📅 2026-10-15 と書いておく");
+    assert.equal(node.schedule, undefined);
+  });
+});
