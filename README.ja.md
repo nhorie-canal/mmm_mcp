@@ -17,15 +17,22 @@ AIエージェントに話しかけるだけで、[マトリョシカ マイン�
 
 ## はじめる
 
-Node.js 18 以上と、Google・Apple・メールアドレスのいずれかを連携したアカウントが必要です（匿名のままのアカウントは使えません。アプリの「メールアドレスを連携」で後から連携できます）。ターミナルに慣れていない方は[詳しい手順](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.ja.md)へ。
+Google・Apple・メールアドレスのいずれかを連携したアカウントが必要です（匿名のままのアカウントは使えません。アプリの「メールアドレスを連携」で後から連携できます）。
 
-**1. ログインする**（アプリで使っている方法に合わせて `google`・`apple`・`email`）
+### Claude Desktop（ターミナル不要）
 
-```bash
-npx -y -p mmm-mcp-server@latest mmm-login login --method google
-```
+1. **[mmm-mcp-server.mcpb](https://github.com/nhorie-canal/mmm_mcp/releases/latest/download/mmm-mcp-server.mcpb)** をダウンロードしてダブルクリックし、Claude Desktop で「インストール」を押す
+2. 「Matryoshka にログインして」と話しかける。ブラウザが開くので、Google か Apple で承認するか、メールアドレスとパスワードを入力ページに入れる（入力ページはあなたのパソコンの中だけで開き、パスワードは AI に渡りません）
+3. 話しかける
+   - 「Matryoshkaのマップ一覧を見せて」
+   - 「〇〇マップに、××というタスクを追加して」
+   - 「このメモを〇〇マップに取り込んで」
 
-**2. AIエージェントに登録する**
+マップの中身を初めて読むときは、Claude があなたに許可を求めます。
+
+### Claude Code・ほかの MCP 対応クライアント
+
+Node.js 18 以上が必要です。ターミナルに慣れていない方は[詳しい手順](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.ja.md)へ。
 
 Claude Code:
 
@@ -33,25 +40,13 @@ Claude Code:
 claude mcp add mmm -- npx -y mmm-mcp-server@latest
 ```
 
-Claude Desktop（`claude_desktop_config.json` に追記し、アプリを再起動）:
-
-```json
-{
-  "mcpServers": {
-    "mmm": { "command": "npx", "args": ["-y", "mmm-mcp-server@latest"] }
-  }
-}
-```
-
 ほかのMCP対応クライアント: `npx -y mmm-mcp-server@latest` をサーバーのコマンドとして登録します。
 
-**3. 話しかける**
+登録したら、AIエージェントに「Matryoshka にログインして」と頼むか、ターミナルでアプリと同じ方法（`google`・`apple`・`email`）でログインします。
 
-- 「Matryoshkaのマップ一覧を見せて」
-- 「〇〇マップに、××というタスクを追加して」
-- 「このメモを〇〇マップに取り込んで」
-
-マップの中身を初めて読むときは、AIエージェントがあなたに許可を求めます。
+```bash
+npx -y -p mmm-mcp-server@latest mmm-login login --method google
+```
 
 ## プライバシー
 

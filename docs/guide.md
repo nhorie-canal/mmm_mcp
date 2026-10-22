@@ -25,11 +25,17 @@ The reasons:
 
 ## Updating to the Latest Version
 
+### Claude Desktop extension (.mcpb)
+
+Download the latest [mmm-mcp-server.mcpb](https://github.com/nhorie-canal/mmm_mcp/releases/latest/download/mmm-mcp-server.mcpb). In Claude Desktop, uninstall the Matryoshka Mind Map extension, then double-click the new file and install it. You stay signed in.
+
+### Registered with `npx`
+
 If your registration in Step 5 of the [setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md) uses `mmm-mcp-server@latest`, the latest version is used every time your AI agent starts, so there is nothing to do.
 
 If you registered with `npx -y mmm-mcp-server` (without `@latest`), you may still be running the old version that was downloaded the first time. Update the registration as follows (you do not need to log in again).
 
-### Claude Code
+#### Claude Code
 
 Remove the registration, then register it again.
 
@@ -51,7 +57,7 @@ claude mcp remove mmm --scope user
 claude mcp add mmm --scope user -- npx -y mmm-mcp-server@latest
 ```
 
-### Claude Desktop
+#### Claude Desktop
 
 Change `"args"` in `claude_desktop_config.json` to `["-y", "mmm-mcp-server@latest"]`, save it, and restart Claude Desktop.
 

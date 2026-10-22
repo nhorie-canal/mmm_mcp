@@ -31,6 +31,12 @@ AIエージェントに任せると楽な反面、そのままだと読みにく
 
 ## 最新版にする
 
+### Claude Desktop の拡張機能（.mcpb）で入れた場合
+
+最新の [mmm-mcp-server.mcpb](https://github.com/nhorie-canal/mmm_mcp/releases/latest/download/mmm-mcp-server.mcpb) をダウンロードします。Claude Desktop で Matryoshka Mind Map の拡張機能をアンインストールしてから、新しいファイルをダブルクリックしてインストールしてください。ログインし直す必要はありません。
+
+### `npx` で登録した場合
+
 [セットアップ](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.ja.md)の手順5の登録が `mmm-mcp-server@latest` になっていれば、AIエージェントを起動するたびに
 最新版が使われるので、何もする必要はありません。
 
@@ -38,7 +44,7 @@ AIエージェントに任せると楽な反面、そのままだと読みにく
 使い続けていることがあります。次のように登録を書き換えてください（ログインし直す必要は
 ありません）。
 
-### Claude Codeを使っている場合
+#### Claude Codeを使っている場合
 
 登録を一度消してから、登録し直します。
 
@@ -60,7 +66,7 @@ claude mcp remove mmm --scope user
 claude mcp add mmm --scope user -- npx -y mmm-mcp-server@latest
 ```
 
-### Claude Desktopを使っている場合
+#### Claude Desktopを使っている場合
 
 `claude_desktop_config.json` の `"args"` を `["-y", "mmm-mcp-server@latest"]` に書き換えて保存し、
 Claude Desktopを再起動してください。

@@ -17,15 +17,22 @@ Talk to your AI agent, and it reads and writes your nested mind maps and TODOs i
 
 ## Get started
 
-You need Node.js 18+ and a Matryoshka account linked to Google, Apple, or an email address (anonymous-only accounts cannot be used). New to the terminal? Follow the [step-by-step setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md).
+You need a Matryoshka account linked to Google, Apple, or an email address (anonymous-only accounts cannot be used).
 
-**1. Log in** with the method you use in the app (`google`, `apple`, or `email`):
+### Claude Desktop (no terminal needed)
 
-```bash
-npx -y -p mmm-mcp-server@latest mmm-login login --method google
-```
+1. Download **[mmm-mcp-server.mcpb](https://github.com/nhorie-canal/mmm_mcp/releases/latest/download/mmm-mcp-server.mcpb)** and double-click it, then click **Install** in Claude Desktop.
+2. Say "Sign in to Matryoshka". A browser window opens: approve with Google or Apple, or enter your email and password on the sign-in page (it runs only on your computer; your password is never shared with the AI).
+3. Talk to it:
+   - "Show me my Matryoshka maps."
+   - "Add a task called [task] to the [map name] map."
+   - "Import these notes into the [map name] map."
 
-**2. Register it with your AI agent.**
+The first time a map's contents are read, Claude asks for your permission.
+
+### Claude Code and other MCP clients
+
+Requires Node.js 18+. New to the terminal? Follow the [step-by-step setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md).
 
 Claude Code:
 
@@ -33,25 +40,13 @@ Claude Code:
 claude mcp add mmm -- npx -y mmm-mcp-server@latest
 ```
 
-Claude Desktop (`claude_desktop_config.json`, then restart the app):
-
-```json
-{
-  "mcpServers": {
-    "mmm": { "command": "npx", "args": ["-y", "mmm-mcp-server@latest"] }
-  }
-}
-```
-
 Other MCP clients: register `npx -y mmm-mcp-server@latest` as the server command.
 
-**3. Talk to it.**
+Then ask the agent to sign in to Matryoshka, or sign in from the terminal with the method you use in the app (`google`, `apple`, or `email`):
 
-- "Show me my Matryoshka maps."
-- "Add a task called [task] to the [map name] map."
-- "Import these notes into the [map name] map."
-
-The first time a map's contents are read, the agent asks for your permission.
+```bash
+npx -y -p mmm-mcp-server@latest mmm-login login --method google
+```
 
 ## Privacy
 
