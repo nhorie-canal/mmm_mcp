@@ -1,350 +1,63 @@
-# mmm-mcp-server
+# Matryoshka Mind Map MCP Server
 
-日本語 | [English](README.en.md)
+English | [日本語](https://github.com/nhorie-canal/mmm_mcp/blob/main/README.ja.md)
 
-Matryoshka Mind Map（マトリョシカ、マインドマップ／TODOアプリ）の自分のマップを、
-AIエージェントとの会話から直接読み書きできるようにするツールです。MCP
-（Model Context Protocol）という共通規格に対応したツールなので、Claude
-Desktop・Claude Codeに限らず、MCPに対応したAIエージェントであれば基本的に
-同じ手順で使えます（**動作確認はClaude Desktop / Claude Codeで実施**しています。
-他のクライアントでの登録方法はそれぞれのドキュメントを参照してください）。
+Talk to your AI agent, and it reads and writes your nested mind maps and TODOs in [Matryoshka Mind Map](https://matryoshkamap.web.app).
 
-- 「今のマップ一覧を見せて」と話しかけるとマップ一覧を教えてくれる
-- 会話の中で考えた内容を、そのままマインドマップの階層構造として追加できる
-- 「〇〇のタスク終わったよ」と伝えるだけでTODOにチェックが付く
-- 長いメモやMarkdownをそのままマップに流し込める
+![Asking an AI agent to plan a trip fills a Matryoshka map, and "I booked the hotel" checks it off](https://raw.githubusercontent.com/nhorie-canal/mmm_mcp/main/docs/demo.gif)
 
-パソコンの中だけで動くツールで、常時起動しているサーバーはありません。使うときだけ
-起動し、あなた自身のログイン情報であなた自身のマップにアクセスします（開発者側は
-あなたのデータを見ることができません）。
+**Get the app (free to start)**: [Web app](https://matryoshkamap.web.app) · [App Store](https://apps.apple.com/app/id1613648306) · [Google Play](https://play.google.com/store/apps/details?id=jp.spheres.mm)
 
-> **2026年9月30日より前に `git clone` で導入した方へ**: アプリ側のデータ形式の
-> 切り替えに伴い、古い版ではマップへの書き込みが失敗するようになります。下の手順5の
-> 登録を `npx -y mmm-mcp-server@latest` に置き換えてください（ログインし直す必要はありません）。
-> clone したまま使い続ける場合は、`mmm_mcp` フォルダで `git pull && npm install && npm run build`
-> を実行してからAIエージェントを再起動してください。
+## What you can do
 
-> このページは、ある程度パソコン操作に慣れていない方でも迷わず進められるよう、
-> ターミナル（コマンドを打つ画面）の開き方から順に説明しています。
->
-> **対応OS**: macOS・Windowsの両方で動作するはずです。Node.jsだけで動く
-> ツールで、OS固有の機能には依存していません。ただし**実機での動作
-> 確認はmacOSでのみ行っています。** Windowsで試して気づいた点があれば、
-> このリポジトリのIssueで教えてください。手順のうち、操作方法がOSで
-> 異なる箇所（ターミナルの開き方・Node.jsのインストール）はmacOS/Windows
-> それぞれ記載しています。それ以外のコマンドはどちらのOSでも同じです。
+- "Show me my maps" — lists your maps
+- Turn ideas from the conversation into a nested mind map
+- "I finished task X" — checks it off your TODO list
+- Paste long notes or Markdown and import them into a map
 
-## 1. 事前に必要なもの
+## Get started
 
-- Matryoshka Mind Mapのアカウント（**匿名利用のみのアカウントは使えません。**
-  Google・Apple・メールアドレスのいずれかでログインできる状態にしてください。
-  アプリ内の「メールアドレスを連携」機能で後から連携することもできます）
-- MCPに対応したAIエージェント（Claude Desktop / Claude Codeで動作確認済み。
-  他のMCP対応クライアントでも基本的に使えるはずです）
-- Node.js（プログラムを動かすための土台。次の手順でインストールします）
+You need Node.js 18+ and a Matryoshka account linked to Google, Apple, or an email address (anonymous-only accounts cannot be used). New to the terminal? Follow the [step-by-step setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md).
 
-## 2. ターミナルを開く
-
-### macOSの場合
-
-1. キーボードで `command`キーを押しながら`スペース`キーを押す（Spotlight検索が開く）
-2. 「ターミナル」と入力する
-3. 一覧に出てきた「ターミナル」を左クリック、またはEnterキーを押す
-
-### Windowsの場合
-
-1. キーボードで `Windows`キーを押す（スタートメニューの検索が開く）
-2. 「PowerShell」と入力する
-3. 一覧に出てきた「Windows PowerShell」を左クリック、またはEnterキーを押す
-
-黒っぽい（または白い）ウィンドウが開けば準備完了です。以降の手順は、この
-ウィンドウに1行ずつコマンドを貼り付けてEnterキーを押していきます（コマンド
-自体はmacOS・Windowsで共通です）。
-
-## 3. Node.jsをインストールする
-
-すでにインストール済みか、次のコマンドで確認できます。
-
-```bash
-node --version
-```
-
-`v18` 以上のバージョン番号（例: `v20.11.0`）が表示されればインストール済みです。
-「command not found」のようなエラーが出た場合は、下記からインストーラーを
-ダウンロードしてください。
-
-https://nodejs.org/
-
-サイトを開くと大きなボタンが2つ出ます。**「LTS」と書かれている方**を左クリックして
-ダウンロードしてください（使っているOSに合わせて、macOSなら`.pkg`、Windowsなら
-`.msi`のインストーラーが自動でダウンロードされます）。ダウンロードしたファイルを
-ダブルクリックし、画面の指示に従って進めてください
-（macOSは「続ける」→「同意する」→「インストール」、Windowsは
-「Next」→「I accept...」→「Install」のように、案内される通りに次へ進めば
-インストールできます）。
-
-インストールが終わったら、ターミナルに戻ってもう一度確認します。
-
-```bash
-node --version
-```
-
-## 4. ログインする
-
-Matryoshka Mind Mapアプリで普段どのログイン方法を使っているかに合わせて、
-次の3つから選んでください。**いずれの方法も、あなた自身が事前に何かを準備する
-必要はありません。** 初回はツールのダウンロードが入るので、少し時間がかかります。
-
-### Googleでログインしている場合
+**1. Log in** with the method you use in the app (`google`, `apple`, or `email`):
 
 ```bash
 npx -y -p mmm-mcp-server@latest mmm-login login --method google
 ```
 
-ブラウザが自動で開くので、いつも使っているGoogleアカウントでログインします。
+**2. Register it with your AI agent.**
 
-### Appleでログインしている場合
-
-```bash
-npx -y -p mmm-mcp-server@latest mmm-login login --method apple
-```
-
-こちらもブラウザが自動で開くので、Apple IDでログインします。
-
-### メールアドレスとパスワードでログインしている場合
-
-```bash
-npx -y -p mmm-mcp-server@latest mmm-login login --method email
-```
-
-メールアドレスとパスワードを聞かれるので入力してください（パスワードは
-画面に表示されません）。
-
-> **「パスワードが違います」というエラーが出た場合**、実際にパスワードを
-> 間違えているとは限りません。そのアカウントがアプリ内でGoogle・Appleの
-> どちらかでログインしていて、そもそもメールアドレス＋パスワードでの
-> ログイン情報を持っていない場合も同じエラーになります。心当たりが
-> あれば、上の「Googleでログインしている場合」または「Appleでログイン
-> している場合」の手順を試してください。
-
-ログインに成功すると、以後は毎回ログインし直す必要はありません（ログイン情報は
-あなたのパソコンの中だけに、あなた以外読めない形で保存されます）。
-
-```bash
-npx -y -p mmm-mcp-server@latest mmm-login status
-```
-
-でログイン状態を確認できます。ログアウトしたい場合は次のコマンドです。
-
-```bash
-npx -y -p mmm-mcp-server@latest mmm-login logout
-```
-
-## 5. AIエージェントにMatryoshkaを教える
-
-ここでは動作確認済みのClaude Desktop / Claude Codeへの登録方法を示します。
-他のMCP対応クライアント（例: Codexなど）を使っている場合も、多くは同じように
-「サーバーを起動するコマンド」（`npx -y mmm-mcp-server@latest`）をそのクライアントの
-MCPサーバー設定に登録するだけで使えるはずです。具体的な登録方法はお使いの
-クライアントのドキュメントを確認してください。
-
-### Claude Codeを使っている場合
+Claude Code:
 
 ```bash
 claude mcp add mmm -- npx -y mmm-mcp-server@latest
 ```
 
-### Claude Desktopを使っている場合
-
-Claude Desktopの設定ファイル（`claude_desktop_config.json`）を開き、
-`mcpServers`の中に次を追記します。
+Claude Desktop (`claude_desktop_config.json`, then restart the app):
 
 ```json
 {
   "mcpServers": {
-    "mmm": {
-      "command": "npx",
-      "args": ["-y", "mmm-mcp-server@latest"]
-    }
+    "mmm": { "command": "npx", "args": ["-y", "mmm-mcp-server@latest"] }
   }
 }
 ```
 
-保存したらClaude Desktopを再起動してください。
+Other MCP clients: register `npx -y mmm-mcp-server@latest` as the server command.
 
-## 6. 使ってみる
+**3. Talk to it.**
 
-AIエージェントとの会話で、次のように話しかけてみてください。
+- "Show me my Matryoshka maps."
+- "Add a task called [task] to the [map name] map."
+- "Import these notes into the [map name] map."
 
-- 「Matryoshkaのマップ一覧を見せて」
-- 「〇〇マップに、××というタスクを追加して」
-- 「〇〇マップの、△△っていうタスク終わったよ」
-- 「このメモをMarkdownで貼るので〇〇マップに取り込んで」
+The first time a map's contents are read, the agent asks for your permission.
 
-**マップの中身（要素の文字列）を初めて読むときだけ**、実際の中身を返す前に
-必ず本人の許可を求める仕組みになっています。中身に個人的な内容が含まれる
-可能性に配慮したものです。
+## Privacy
 
-ツールは中身を返す代わりに、「ユーザー本人に直接確認してから`confirmed: true`
-を付けて呼び直せ」という指示だけを返します。実際に確認したかどうかをこちら側で
-検証する手段は無いベストエフォートの経路です。使っているAIエージェントが指示
-通りきちんと確認してくれるかは、そのエージェント次第になります。同じマップは、
-そのサーバーが起動している間（概ね1回の会話）は再確認されません。
+- Runs only on your computer, only while you talk to your agent. No always-on server.
+- Your login is stored only on your computer, and your maps are read and written directly in your own account. The developer cannot see your data.
 
-（以前はMCP標準の確認ダイアログ機能「elicitation」で強制する経路も
-併用していましたが、対応を広告していながら実際にはダイアログを出さない
-クライアントがあり、本人が一度も確認画面を見ないまま読み取れなくなる
-不具合があったため、2026-09-03に廃止し、上記の方式に一本化しました）
+## More
 
-## 書き方を安定させる
-
-AIエージェントに任せると楽な反面、そのままだと読みにくいマップになりがちです。
-次の文言を、AIエージェントが毎回読み込む指示ファイル（Claude Codeなら
-`~/.claude/CLAUDE.md`）に貼っておくと、書き方が安定します。
-
-```markdown
-## mmmへの書き方
-
-- 1つの要素は1行で読み切れる長さにする。説明を詰め込まない。
-  理由や補足を残したいときは、子要素として1段下に置く
-- URLは単独の要素にする。「資料はこちら https://...」のように
-  説明文と混ぜてはいけない。「資料」という要素を作り、その子に
-  URLだけを置く
-- やり忘れを防ぐための項目は時系列で並べる。「リリース直後」
-  「2週間後」「〇〇になったら」のように、いつやるかを項目名にする
-```
-
-それぞれの理由は次のとおりです。
-
-- **1行にする** … Matryoshkaは要素を入れ子で表示するので、1つが長いと
-  一覧性が落ちて、階層をたどる良さが消えてしまいます
-- **URLを混ぜない** … 説明文と同じ要素に入れるとアプリでリンクとして
-  扱われず、タップしても開けません
-- **時系列で並べる** … 作業の名前で並べるより、順に消していく形になるぶん、
-  抜けに気づきやすくなります
-
-## 最新版にする
-
-手順5の登録が `mmm-mcp-server@latest` になっていれば、AIエージェントを起動するたびに
-最新版が使われるので、何もする必要はありません。
-
-`@latest` の付いていない `npx -y mmm-mcp-server` で登録した方は、最初に取得した古い版を
-使い続けていることがあります。次のように登録を書き換えてください（ログインし直す必要は
-ありません）。
-
-### Claude Codeを使っている場合
-
-登録を一度消してから、登録し直します。
-
-```bash
-claude mcp remove mmm
-```
-
-```bash
-claude mcp add mmm -- npx -y mmm-mcp-server@latest
-```
-
-`--scope user` で登録していた方は、消すときも登録するときも `--scope user` を付けます。
-
-```bash
-claude mcp remove mmm --scope user
-```
-
-```bash
-claude mcp add mmm --scope user -- npx -y mmm-mcp-server@latest
-```
-
-### Claude Desktopを使っている場合
-
-`claude_desktop_config.json` の `"args"` を `["-y", "mmm-mcp-server@latest"]` に書き換えて保存し、
-Claude Desktopを再起動してください。
-
-## よくあるトラブル
-
-| 症状 | 原因・対処 |
-|---|---|
-| `node --version`が「command not found」になる | 手順3のNode.jsインストールがまだ。インストール後、ターミナルを一度閉じて開き直す |
-| ログイン時に「パスワードが違います」と出る | 手順4の補足を参照。Google/Appleでログインし直してみる |
-| 話しかけてもマップ操作をしてくれない | 手順5の登録が正しいか確認する。Claude Desktopは登録後に再起動が必要 |
-| マップの中身を教えてくれない・確認だけで止まる | 「読んでいいですか」の確認に「はい」と答えているか確認する |
-| 大きなマップをAIが読み込めない | 要素が数百を超えると`list_elements`の応答が大きくなり、一度に受け取れないことがある。AIエージェントによっては、いったんファイルに保存して必要な部分だけ読む形で対応する。頻繁に起きるならマップを分ける（最上位の要素を左スワイプすると、配下ごと独立したマップになる） |
-
-## 活用例（応用編）: フォルダ単位でタスクを自動記録する
-
-ここから先は**一つの使い方の例**です。全員にすすめる標準的な使い方という
-わけではなく、「こういう設定をすればこんなことができる」という可能性を
-示すものなので、自分に合わないと思えば無視してかまいません。
-
-**やりたいこと**: Claude Codeで作業しているフォルダ（プロジェクト）ごとに
-同名のマップを1つ対応させ、作業中に出てきたタスクをAIエージェントが確認なしで
-そのマップへリアルタイムに記録・更新していく。
-
-> ここで示す(2)の設定はClaude Codeの「グローバルCLAUDE.md」という、常に
-> 読み込ませる指示ファイルの仕組みを使った例です。他のAIエージェントでも、
-> 同じように「毎回読み込ませる指示」を設定できる機能があれば、同じ考え方を
-> 応用できるはずです。
-
-### 必要な設定
-
-**(1) mmmサーバーを全フォルダ共通で使えるように登録し直す**
-
-手順5でClaude Codeに登録するとき、そのままだと今いるフォルダでしか
-`mmm`ツールが使えません。どのフォルダで`claude`を起動しても使えるように
-するには、`--scope user`を付けて登録します。
-
-```bash
-claude mcp add mmm --scope user -- npx -y mmm-mcp-server@latest
-```
-
-**(2) グローバルのCLAUDE.md（`~/.claude/CLAUDE.md`）に運用ルールを書く**
-
-例えば次のような文言を追記します。
-
-```markdown
-## mmmでのタスク管理
-
-作業フォルダで発生したタスクは、mmm（Matryoshka Mind Map連携）に
-記録してリアルタイムで管理する。
-
-- 作業フォルダ名をそのままマップのタイトルとして扱う
-- list_mapsで同名のマップが既にあるか確認する。無ければ、
-  タイトルの確認を挟まずそのままcreate_map(title=フォルダ名,
-  isTodo=true)で作成してよい（この運用に限り事前確認は不要とする）
-- 既存タスクを把握するためlist_elementsを呼ぶと、そのマップを
-  そのプロセスで初めて読むときだけ確認が入る。それ以降は
-  auto_structure_thought/update_task_statusでリアルタイムに
-  追記・更新する
-```
-
-### 動きの理由
-
-- `create_map`はタイトルを直接引数で受け取るツールで、「呼ぶ前に会話で
-  確認を取る」というのはツールの説明文に書かれたAIエージェント向けの
-  推奨動作にすぎません。より具体的なCLAUDE.mdの指示を優先させることで、
-  確認なしの自動作成にできます
-- マップの中身を読む`list_elements`だけは、秘匿情報への配慮として
-  サーバー側で確認を強制しています（上の「使ってみる」節を参照）。
-  これはフォルダ単位の運用にしても変わらず、同じマップをその
-  プロセスで初めて読むときに1回だけ確認が入ります
-
-### 注意点
-
-- 全フォルダで自動的にマップが増えていくため、普段使っている厳選された
-  マインドマップの中に、作業ログ的なマップが混ざります。人によっては
-  雑多に感じるかもしれません。専用のアカウントを分ける、対象フォルダを
-  限定するなど、自分に合う形に調整してください
-- ここで示した`create_map`の確認省略は、あくまでこの運用を自分のCLAUDE.mdで
-  明示した場合の話です。何も設定しなければ、これまで通り会話内で確認を
-  取ってから作成されます
-
-## このツールについて
-
-- あなたのログイン情報（更新トークン）はあなたのパソコンの中
-  （macOSは`~/.config/mmm-mcp/credentials.json`、Windowsは
-  `C:\Users\<ユーザー名>\.config\mmm-mcp\credentials.json`）にのみ保存され、
-  他の場所には送信されません
-- マップの内容はあなたのFirebaseアカウントに直接読み書きされ、開発者を含む
-  第三者のサーバーを経由しません（Appleでログインする場合のみ、ログインの
-  最後の一手続きで署名専用の中継サーバーを経由しますが、あなたのマップの
-  中身は一切通りません）
-- 常時起動しているプロセスはなく、AIエージェントとの会話中だけ動作します
+[Tips and advanced use](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.md) — keeping maps tidy, recording tasks per folder, updating, troubleshooting.
