@@ -182,6 +182,13 @@ test("要約: リンク付きの要素を消すと、header の linkCounts を�
   byPath(all);
 });
 
+test("要約: header の書き込みは「存在すること」が前提(消えたマップに header の抜け殻を作らない)", () => {
+  const snap = snapshot(BASE, { root: { b: [T1] } });
+  const { writes } = buildLevelsDeleteWrites(LEVELS_PATH, snap, ["b"]);
+  const header = withLinkSummary(HEADER_PATH, LEVELS_PATH, snap, writes).find((w) => w.path === HEADER_PATH);
+  assert.equal(header!.requireExists, true);
+});
+
 test("要約: 最後のリンクを消したら、空の linkCounts を書く", () => {
   const snap = snapshot(BASE, { root: { b: [T1] } });
   const { writes } = buildLevelsDeleteWrites(LEVELS_PATH, snap, ["b"]);

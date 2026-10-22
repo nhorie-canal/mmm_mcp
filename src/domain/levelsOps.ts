@@ -458,5 +458,6 @@ export function withLinkSummary(
   const after = linkCountsOfSnapshot(applyWritesToSnapshot(levelsPath, snapshot, writes));
   const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
   const changed = [...keys].some((k) => before[k] !== after[k]);
-  return changed ? [...writes, { path: headerPath, fields: { linkCounts: after } }] : writes;
+  // header は存在するときだけ書く(別の端末で消えたマップに、title も order も無い抜け殻を作らない)
+  return changed ? [...writes, { path: headerPath, fields: { linkCounts: after }, requireExists: true }] : writes;
 }

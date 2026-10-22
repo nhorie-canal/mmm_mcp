@@ -78,6 +78,12 @@ export interface FirestoreWrite {
    * 作られていればFAILED_PRECONDITIONで失敗させる。[requireUpdateTime]と同時には使わない。
    */
   requireMissing?: boolean;
+  /**
+   * trueならドキュメントが既に存在する場合だけ書き込む(currentDocument.exists=true)。
+   * 付随して書く別ドキュメント(header の要約など)が、消えたマップに抜け殻を作らないため。
+   * 無ければコミット全体が失敗する。[requireUpdateTime]・[requireMissing]と同時には使わない。
+   */
+  requireExists?: boolean;
 }
 
 export class FirestoreRestClient {
@@ -250,7 +256,9 @@ export class FirestoreRestClient {
           ? { currentDocument: { updateTime: w.requireUpdateTime } }
           : w.requireMissing
             ? { currentDocument: { exists: false } }
-            : {};
+            : w.requireExists
+              ? { currentDocument: { exists: true } }
+              : {};
         if (w.delete) {
           return { delete: name, ...currentDocument };
         }
