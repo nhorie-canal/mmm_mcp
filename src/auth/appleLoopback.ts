@@ -16,7 +16,9 @@ function base64url(buffer: Buffer): string {
  * 固定でなければならず、そこにポート番号を含められないため、
  * ここでは毎回固定ポート(APPLE_LOOPBACK_PORT)でローカルサーバーを立てる。
  */
-export async function signInWithAppleLoopback(): Promise<string> {
+export async function signInWithAppleLoopback(
+  log: (message: string) => void = console.log
+): Promise<string> {
   const state = base64url(randomBytes(16));
 
   return new Promise<string>((resolve, reject) => {
@@ -49,7 +51,7 @@ export async function signInWithAppleLoopback(): Promise<string> {
 
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
         res.end(
-          "<p>Appleサインインが完了しました。このタブは閉じてターミナルに戻ってください。</p>"
+          "<p>Appleサインインが完了しました。このタブは閉じて構いません。</p>"
         );
         server.close();
         resolve(code);
@@ -68,9 +70,9 @@ export async function signInWithAppleLoopback(): Promise<string> {
       authUrl.searchParams.set("response_mode", "query");
       authUrl.searchParams.set("state", state);
 
-      console.log("ブラウザでAppleのサインイン画面を開きます…");
+      log("ブラウザでAppleのサインイン画面を開きます…");
       open(authUrl.toString()).catch(() => {
-        console.log(`自動で開けなかった場合は次のURLを開いてください:\n${authUrl.toString()}`);
+        log(`自動で開けなかった場合は次のURLを開いてください:\n${authUrl.toString()}`);
       });
     });
 

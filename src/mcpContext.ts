@@ -16,3 +16,8 @@ export function getContext(): McpContext {
   }
   return cached;
 }
+
+/** サインインし直したときに呼び、次のツール呼び出しで新しい認証情報を読み直させる。 */
+export function resetContext(): void {
+  cached = null;
+}

@@ -11,11 +11,12 @@ import { registerEditElement } from "./tools/editElement.js";
 import { registerDeleteElements } from "./tools/deleteElements.js";
 import { registerMoveElement } from "./tools/moveElement.js";
 import { registerSetSchedule } from "./tools/setSchedule.js";
+import { registerSignIn } from "./tools/signIn.js";
 
 const server = new McpServer(
   {
     name: "matryoshka-mindmap",
-    version: "0.2.1",
+    version: "0.3.0",
   },
   {
     instructions:
@@ -37,6 +38,7 @@ registerEditElement(server);
 registerDeleteElements(server);
 registerMoveElement(server);
 registerSetSchedule(server);
+registerSignIn(server);
 
 const transport = new StdioServerTransport();
 await server.connect(transport);

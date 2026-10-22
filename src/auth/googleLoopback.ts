@@ -18,7 +18,9 @@ function base64url(buffer: Buffer): string {
  * `gcloud auth login`と同種のローカルループバック方式でGoogleにサインインし、
  * IDトークン(JWT、Firebaseへの交換に使う)を返す。
  */
-export async function signInWithGoogleLoopback(): Promise<string> {
+export async function signInWithGoogleLoopback(
+  log: (message: string) => void = console.log
+): Promise<string> {
   const { client_id, client_secret } = loadGoogleOAuthClientConfig();
   const codeVerifier = base64url(randomBytes(32));
   const codeChallenge = base64url(createHash("sha256").update(codeVerifier).digest());
@@ -68,7 +70,7 @@ export async function signInWithGoogleLoopback(): Promise<string> {
 
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
         res.end(
-          "<p>Googleログインが完了しました。このタブは閉じてターミナルに戻ってください。</p>"
+          "<p>Googleログインが完了しました。このタブは閉じて構いません。</p>"
         );
         server.close();
         resolve(tokenData.id_token as string);
@@ -92,9 +94,9 @@ export async function signInWithGoogleLoopback(): Promise<string> {
       authUrl.searchParams.set("code_challenge_method", "S256");
       authUrl.searchParams.set("prompt", "select_account");
 
-      console.log("ブラウザでGoogleのログイン画面を開きます…");
+      log("ブラウザでGoogleのログイン画面を開きます…");
       open(authUrl.toString()).catch(() => {
-        console.log(`自動で開けなかった場合は次のURLを開いてください:\n${authUrl.toString()}`);
+        log(`自動で開けなかった場合は次のURLを開いてください:\n${authUrl.toString()}`);
       });
     });
 
