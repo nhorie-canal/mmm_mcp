@@ -15,7 +15,7 @@ import { registerSetSchedule } from "./tools/setSchedule.js";
 const server = new McpServer(
   {
     name: "matryoshka-mindmap",
-    version: "0.2.0",
+    version: "0.2.1",
   },
   {
     instructions:

@@ -3,16 +3,17 @@
   "name": "io.github.nhorie-canal/mmm-mcp-server",
   "title": "Matryoshka Mind Map",
   "description": "Read and write your Matryoshka Mind Map (nested mind map / TODO app) from AI agents.",
+  "websiteUrl": "https://matryoshkamap.web.app",
   "repository": {
     "url": "https://github.com/nhorie-canal/mmm_mcp",
     "source": "github"
   },
-  "version": "0.2.0",
+  "version": "0.2.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "mmm-mcp-server",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "transport": {
         "type": "stdio"
       }
