@@ -58,7 +58,9 @@ export function parseMarkdownForImport(
   markdownText: string,
   { headingsAsNodes }: { headingsAsNodes: boolean }
 ): ParsedMarkdown {
-  const rawLines = markdownText.split(/\n?\n/);
+  // Windows(CRLF)・古い Mac(CR)の改行は LF にそろえる。`\r`が行末に残ると、
+  // 行の終わりを`$`で見る箇条書き・見出しの判定に1行も合わず、何も取り込めない。
+  const rawLines = markdownText.replace(/\r\n?/g, "\n").split(/\n?\n/);
   const lines: string[] = [];
   for (const line of rawLines) {
     if (line.trim() === "---") break;

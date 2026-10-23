@@ -147,3 +147,42 @@ test("parseMarkdownForImport: 期日(📅)・着手日(🛫)", async (t) => {
     assert.equal(node.schedule, undefined);
   });
 });
+
+// IDは毎回変わるので、親・前後・子を並びの位置に置き換えて比べる。
+function outline(nodes: MarkdownNode[]) {
+  const indexOf = (id: string | null) => (id === null ? null : nodes.findIndex((n) => n.id === id));
+  return nodes.map((n) => ({
+    detail: n.detail,
+    rawIndent: n.rawIndent,
+    done: n.done,
+    parent: indexOf(n.parentId),
+    prev: indexOf(n.prevId),
+    next: indexOf(n.nextId),
+    child: indexOf(n.childId),
+    schedule: n.schedule,
+  }));
+}
+
+test("parseMarkdownForImport の改行コード", async (t) => {
+  const lf = "# 見出し\n\n- [x] a 📅 2026-05-01\n  - [ ] a1\n    2行目\n- [ ] b\n\n---\n- 署名\n";
+
+  for (const [name, eol] of [
+    ["CRLF", "\r\n"],
+    ["CR だけ(古い Mac の形式)", "\r"],
+  ] as const) {
+    await t.test(`${name} の改行でも、LF と同じ構造・チェック・見出し・日付で取り込む`, () => {
+      for (const headingsAsNodes of [true, false]) {
+        const expected = parseMarkdownForImport(lf, { headingsAsNodes });
+        const actual = parseMarkdownForImport(lf.replace(/\n/g, eol), { headingsAsNodes });
+        assert.equal(actual.headingTitle, "見出し");
+        assert.equal(actual.hasCheckbox, expected.hasCheckbox);
+        assert.deepEqual(outline(actual.nodes), outline(expected.nodes));
+      }
+      const { nodes } = parseMarkdownForImport(lf.replace(/\n/g, eol), { headingsAsNodes: false });
+      assert.deepEqual(
+        nodes.map((n) => n.detail),
+        ["a", "a1\n2行目", "b"]
+      );
+    });
+  }
+});
