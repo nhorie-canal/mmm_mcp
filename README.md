@@ -51,7 +51,8 @@ npx -y -p mmm-mcp-server@latest mmm-login login --method google
 ## Privacy
 
 - Runs only on your computer, only while you talk to your agent. No always-on server.
-- Your login is stored only on your computer, and your maps are read and written directly in your own account. The developer cannot see your data.
+- Your login is stored only on your computer, and your maps are read and written directly in your own account. The developer never views the contents of your maps.
+- To understand usage, on days the server writes to your maps it records only the date and a count of days in your account (never titles or contents).
 
 ## More
 

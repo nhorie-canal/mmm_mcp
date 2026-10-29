@@ -89,6 +89,12 @@ export interface FirestoreWrite {
 export class FirestoreRestClient {
   constructor(private session: AuthSession) {}
 
+  /**
+   * [runOptimistic]の書き込みが成功したあとに呼ぶ(MCP の利用の印をつけるため)。
+   * 失敗しても書き込みの結果は変えない。
+   */
+  onWriteSucceeded?: () => Promise<void>;
+
   private async headers(): Promise<Record<string, string>> {
     const idToken = await this.session.getValidIdToken();
     return {
@@ -133,6 +139,11 @@ export class FirestoreRestClient {
       const writes = await operation();
       try {
         await this.commitWrites(writes);
+        try {
+          await this.onWriteSucceeded?.();
+        } catch {
+          // 書き込みはもう通っている。計測の失敗では結果を変えない
+        }
         return;
       } catch (e) {
         lastError = e;

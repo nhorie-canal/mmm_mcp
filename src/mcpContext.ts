@@ -1,4 +1,5 @@
 import { loadSession, type AuthSession } from "./auth/session.js";
+import { McpUsageRecorder } from "./firestore/mcpUsage.js";
 import { FirestoreRestClient } from "./firestore/restClient.js";
 
 export interface McpContext {
@@ -12,7 +13,11 @@ let cached: McpContext | null = null;
 export function getContext(): McpContext {
   if (!cached) {
     const session = loadSession();
-    cached = { session, client: new FirestoreRestClient(session) };
+    const client = new FirestoreRestClient(session);
+    const usage = new McpUsageRecorder();
+    // マップへの書き込みに成功したら、その日の初回だけ「MCP から書いた日」の印をつける
+    client.onWriteSucceeded = () => usage.record(client, session.uid);
+    cached = { session, client };
   }
   return cached;
 }

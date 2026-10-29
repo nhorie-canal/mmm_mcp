@@ -16,7 +16,7 @@ import { registerSignIn } from "./tools/signIn.js";
 const server = new McpServer(
   {
     name: "matryoshka-mindmap",
-    version: "0.3.1",
+    version: "0.3.2",
   },
   {
     instructions:

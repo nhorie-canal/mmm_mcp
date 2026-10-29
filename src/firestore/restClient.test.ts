@@ -30,3 +30,31 @@ test("前提の指定が無ければ currentDocument を付けない", async () 
   await client.commitWrites([{ path: "users/u1/headers/h1/levels/root", fields: { children: [] } }]);
   assert.equal("currentDocument" in bodies[0].writes[0], false);
 });
+
+test("runOptimistic: 書き込みが通ったあとに onWriteSucceeded を呼ぶ。印の失敗は書き込みの結果を変えない", async () => {
+  const { client, bodies } = clientCapturing();
+  let called = 0;
+  client.onWriteSucceeded = async () => {
+    called++;
+    throw new Error("印の書き込みに失敗");
+  };
+  await client.runOptimistic(async () => [{ path: "users/u1/headers/h1/levels/root", fields: { children: [] } }]);
+  assert.equal(bodies.length, 1);
+  assert.equal(called, 1);
+});
+
+test("runOptimistic: 書き込みが失敗したときは onWriteSucceeded を呼ばない", async () => {
+  globalThis.fetch = (async () =>
+    new Response(JSON.stringify({ error: { message: "x", status: "PERMISSION_DENIED" } }), {
+      status: 403,
+      headers: { "content-type": "application/json" },
+    })) as typeof fetch;
+  const session = { getValidIdToken: async () => "token" } as unknown as AuthSession;
+  const client = new FirestoreRestClient(session);
+  let called = 0;
+  client.onWriteSucceeded = async () => {
+    called++;
+  };
+  await assert.rejects(client.runOptimistic(async () => [{ path: "users/u1/headers/h1", fields: { a: 1 } }]));
+  assert.equal(called, 0);
+});
