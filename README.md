@@ -14,6 +14,7 @@ Talk to your AI agent, and it reads and writes your nested mind maps and TODOs i
 - Turn ideas from the conversation into a nested mind map
 - "I finished task X" — checks it off your TODO list
 - Paste long notes or Markdown and import them into a map
+- Save notes from the conversation as a Markdown document inside a map, and read it back later
 
 ## Get started
 

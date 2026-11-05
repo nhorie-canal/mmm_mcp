@@ -111,7 +111,7 @@ integration) and manage them in real time.
 ### Why this works
 
 - `create_map` takes the title directly as an argument; "confirm in the conversation before calling" is only a recommended behavior for AI agents written in the tool description. A more specific instruction in CLAUDE.md takes priority, so maps can be created automatically without confirmation.
-- Only `list_elements`, which reads map contents, has confirmation enforced on the server side out of consideration for confidential information (see "Try It Out" in the [setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md)). This does not change with the per-folder workflow: confirmation happens once, the first time a map is read in that process.
+- Only `list_elements` and `read_document`, which read map contents, have confirmation enforced on the server side out of consideration for confidential information (see "Try It Out" in the [setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md)). This does not change with the per-folder workflow: confirmation happens once, the first time a map is read in that process.
 
 ### Caveats
 

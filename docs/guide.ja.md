@@ -134,7 +134,7 @@ claude mcp add mmm --scope user -- npx -y mmm-mcp-server@latest
   確認を取る」というのはツールの説明文に書かれたAIエージェント向けの
   推奨動作にすぎません。より具体的なCLAUDE.mdの指示を優先させることで、
   確認なしの自動作成にできます
-- マップの中身を読む`list_elements`だけは、秘匿情報への配慮として
+- マップの中身を読む`list_elements`と`read_document`だけは、秘匿情報への配慮として
   サーバー側で確認を強制しています（[セットアップ](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.ja.md)の「使ってみる」を参照）。
   これはフォルダ単位の運用にしても変わらず、同じマップをその
   プロセスで初めて読むときに1回だけ確認が入ります
