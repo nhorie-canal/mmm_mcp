@@ -5,50 +5,22 @@ import { resolveMap, levelsPathOf } from "../domain/mapResolver.js";
 import { type ElementNode } from "../domain/levels.js";
 import { elementTreeOf, readLevelsSnapshot } from "../domain/levelsOps.js";
 import { formatScheduleDate } from "../domain/scheduleText.js";
+import { parseDocumentDetail } from "../domain/documentRef.js";
+import { checkReadAllowed } from "./readGate.js";
 
 // ElementNodeの`done`を`checked`という名前で公開する(仕様書の用語に合わせる)。
 function toChecked(nodes: ElementNode[]): unknown[] {
   return nodes.map((n) => ({
     id: n.id,
     detail: n.detail,
+    // MD 文書の要素は、中身を read_document で読めるよう文書のidとタイトルを添える
+    ...(parseDocumentDetail(n.detail) ? { document: parseDocumentDetail(n.detail) } : {}),
     checked: n.done,
     // 日付は付いているときだけ返す(docs/schedule.md §3 MCP)
     ...(n.schedule?.due ? { due: formatScheduleDate(n.schedule.due) } : {}),
     ...(n.schedule?.start ? { start: formatScheduleDate(n.schedule.start) } : {}),
     children: toChecked(n.children),
   }));
-}
-
-// マップの中身には秘匿情報が含まれ得るため、実際の要素を返す前に必ず本人の
-// 明示的な許可を得る。このサーバープロセスが生きている間(概ね1会話)、
-// 同じマップへの確認は1回でよい。
-//
-// 当初はMCP標準のelicitInputで確認していたが、接続クライアントが対応を
-// 広告していても実際にはダイアログを一切出さないまま失敗することがあり
-// (2026-09-03、Claude Codeデスクトップアプリで確認)、本人が一度も確認画面を
-// 見ないまま恒久的に読み取り不能になる不具合があった。ホストごとの
-// elicitation対応状況に依存しない、呼び出し側(Claude等)への文面提示+
-// confirmedパラメータの方式に一本化した。呼び出し側が実際にユーザーへ
-// 確認したかをこちらで検証する手段は無いため、確実な強制ではなく
-// ベストエフォートであることを理解した上で採用している。
-const confirmedMapIds = new Set<string>();
-
-function buildConfirmationRequestText(title: string): string {
-  return (
-    `「${title}」の中身を読み取る前に、ユーザー本人に直接「中身を確認してよいか」と` +
-    "尋ねてください。まだ実データは返していません。同意が得られたら、confirmed: true を" +
-    "付けてこのツールを再度呼び出してください。"
-  );
-}
-
-class AiReadDeniedError extends Error {
-  constructor(title: string) {
-    super(
-      `「${title}」はAIからの読み取りが「常に拒否」に設定されているため、このツールでは読めません。` +
-        "読む必要がある場合は、アプリのマップ編集画面で設定を変更するようユーザーに伝えてください。"
-    );
-    this.name = "AiReadDeniedError";
-  }
 }
 
 export function registerListElements(server: McpServer): void {
@@ -65,7 +37,9 @@ export function registerListElements(server: McpServer): void {
       "それ以外のマップは、実データの代わりに確認を促すメッセージだけを返すので、" +
       "そのときに限りユーザーに直接確認してからconfirmed: trueで呼び直すこと。" +
       "アプリ側での直接の編集はこのツールを呼ぶまで反映されないため、" +
-      "ユーザーから進捗や状態を尋ねられたときは記憶に頼らず必ず呼び直すこと。",
+      "ユーザーから進捗や状態を尋ねられたときは記憶に頼らず必ず呼び直すこと。" +
+      "MD文書の要素にはdocument(documentIdとtitle)が付く。detailは「mmmdoc://…」で始まる印とタイトルで、" +
+      "文書の中身はread_documentで読む。",
     {
       mapId: z.string().describe("list_mapsで得たマップのID"),
       confirmed: z
@@ -81,26 +55,10 @@ export function registerListElements(server: McpServer): void {
       const { client, session } = getContext();
       const map = await resolveMap(client, session, mapId);
 
-      // マップ単位のAI読み取り許可(aiReadPermission)。このフィールドは
-      // アプリのマップ編集画面からのみ変更でき、MCPサーバーのどの
-      // ツールからも書き込まない(AIが自分自身に許可を与えられると
-      // 確認の仕組みが意味を失うため)。
-      if (map.header.aiReadPermission === "deny") {
-        throw new AiReadDeniedError(map.header.title);
-      }
-      const alwaysAllowed = map.header.aiReadPermission === "allow";
-
-      // 未確認のマップでは、確認を促す文面だけを返して終える。levelsの
-      // 実データはこのゲートを通過するまで一切読みに行かない
-      // (以前はlevels/rootの存在確認のために先に読んでしまっていたが、
-      // 「実際の要素を返す前に必ず本人の明示的な許可を得る」という設計
-      // 意図に反するため、確認ゲートの後に読む順序へ戻した)。
-      if (!alwaysAllowed && !confirmedMapIds.has(mapId)) {
-        if (confirmed === true) {
-          confirmedMapIds.add(mapId);
-        } else {
-          return { content: [{ type: "text", text: buildConfirmationRequestText(map.header.title) }] };
-        }
+      // 実データは確認のゲートを通過するまで一切読みに行かない(readGate.ts)
+      const confirmation = checkReadAllowed(map, mapId, confirmed);
+      if (confirmation !== null) {
+        return { content: [{ type: "text", text: confirmation }] };
       }
 
       // levels/rootが無いマップは空のマップとして返す(アプリで開いてもrootは作られない)。

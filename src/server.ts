@@ -3,6 +3,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerListMaps } from "./tools/listMaps.js";
 import { registerListElements } from "./tools/listElements.js";
+import { registerReadDocument } from "./tools/readDocument.js";
+import { registerCreateDocument } from "./tools/createDocument.js";
 import { registerCreateMap } from "./tools/createMap.js";
 import { registerAutoStructureThought } from "./tools/autoStructureThought.js";
 import { registerUpdateTaskStatus } from "./tools/updateTaskStatus.js";
@@ -16,7 +18,7 @@ import { registerSignIn } from "./tools/signIn.js";
 const server = new McpServer(
   {
     name: "matryoshka-mindmap",
-    version: "0.3.2",
+    version: "0.4.0",
   },
   {
     instructions:
@@ -30,6 +32,8 @@ const server = new McpServer(
 
 registerListMaps(server);
 registerListElements(server);
+registerReadDocument(server);
+registerCreateDocument(server);
 registerCreateMap(server);
 registerAutoStructureThought(server);
 registerUpdateTaskStatus(server);

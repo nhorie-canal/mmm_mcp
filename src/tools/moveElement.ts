@@ -27,13 +27,18 @@ export function registerMoveElement(server: McpServer): void {
       newParentElementId: z
         .string()
         .nullable()
-        .describe("移動先の親要素のID。マップの最上位へ移動する場合はnull"),
+        .optional()
+        .describe("移動先の親要素のID。マップの最上位へ移動する場合はnullまたは省略"),
       afterElementId: z
         .string()
         .nullable()
-        .describe("移動先の中で、このIDの要素の直後に置く。先頭に置く場合はnull"),
+        .optional()
+        .describe("移動先の中で、このIDの要素の直後に置く。先頭に置く場合はnullまたは省略"),
     },
-    async ({ mapId, elementId, newParentElementId, afterElementId }) => {
+    async ({ mapId, elementId, newParentElementId: parentArg, afterElementId: afterArg }) => {
+      // null の型を落として "null" の文字列で送るクライアントがあるので、省略も受け付ける
+      const newParentElementId = parentArg ?? null;
+      const afterElementId = afterArg ?? null;
       const { client, session } = getContext();
       const map = await resolveMap(client, session, mapId);
       assertCanEditMap(map, session);
