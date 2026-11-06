@@ -23,6 +23,54 @@ The reasons:
 - **Do not mix URLs with text**: A URL in the same element as other text is not treated as a link in the app, so tapping it does nothing.
 - **Chronological order**: Compared with ordering by task name, checking items off in order makes it easier to notice anything you missed.
 
+## Managing Development Work
+
+An example instruction for keeping the tasks and notes of AI-assisted development in Matryoshka. Paste it, together with "Keeping Your Maps Tidy" above, into the instructions your AI agent loads every time:
+
+| Client | Where to paste |
+|---|---|
+| Claude Code | `CLAUDE.md` at the project root, or `~/.claude/CLAUDE.md` |
+| Claude Desktop / claude.ai | Settings → Profile → personal preferences (applies to all chats), or a project's instructions (that project only) |
+
+````markdown
+## Task management (mmm)
+
+Record the tasks and notes that come up in this working folder with the Matryoshka Mind Map (mmm) MCP server.
+
+- **Keep "things to do later" only in mmm.** Do not leave them in plan checkboxes, this file,
+  or only in the conversation. Tasks that come out of a design doc, and remaining work or
+  unverified points you mention in a report, go into mmm as items right away.
+- Use the working folder's name as the map title. Look for a map with that name with
+  `list_maps`; if there is none, you may create one with `create_map` (as a TODO map).
+- Make each task a one-line element. Put reasons, steps, and paths of related docs as child elements.
+- Create a parent element per version or milestone and list its tasks under it
+  (for example, the tasks shipping in 1.2.0 go under "1.2.0").
+- **Check off a task as soon as it is done**, so that unchecked always means work that is really left.
+  "Lower priority" or "on hold" is not done: do not check it; move it under an "On hold" parent.
+- Do not write due or start dates in the text; set them with `set_schedule`.
+- **Keep notes such as research, comparisons, and design memos as Markdown documents
+  (`create_document`) under the related item.** Draw diagrams in ```mermaid blocks
+  (the app renders them as diagrams). Documents cannot be edited, so to revise one,
+  create a new document and delete the old one.
+- When asked about progress, do not answer from memory: re-read with `list_elements` first
+  (items checked directly in the app are not visible until you re-read).
+- Before moving, closing, or deleting items, re-read their current state. Never uncheck items a person has checked.
+````
+
+The reasons:
+
+| Rule | Why |
+|---|---|
+| Keep "things to do later" only in mmm | When tasks are scattered, both the next AI session and you miss what is left |
+| List tasks under a parent per version | Drilling down shows what is left for each version at a glance |
+| Check off right away | The number of unchecked items is exactly the remaining work |
+| Keep notes as Markdown documents under the task | The task and its rationale sit together, one tap away, and they survive closing the chat |
+| Draw diagrams in Mermaid | The app renders them as diagrams, and an AI reading them later still understands the content |
+| Re-read when asked | The MCP server does not learn about changes made in the app on its own |
+
+- Creating Markdown documents requires MCP server 0.4.0 or later and app 5.3.0 or later.
+- On the free plan, each map can hold up to 3 documents.
+
 ## Updating to the Latest Version
 
 ### Claude Desktop extension (.mcpb)
