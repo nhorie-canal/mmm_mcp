@@ -14,7 +14,8 @@ function detailsOf(nodes: ElementNode[]): string[] {
 export function registerReadDocument(server: McpServer): void {
   server.tool(
     "read_document",
-    "マップのMD文書の要素の中身(Markdown)を読む。読むだけで、書き込みはできない。" +
+    "マップのMD文書の要素の中身(Markdown)を読む。読むだけで、書き込みはできない(書き換えはupdate_document)。" +
+      "結果のupdateTimeは、update_documentのbaseUpdateTimeにそのまま渡す。" +
       "documentIdは、list_elementsが返す文書の要素のdocument.documentId。" +
       "list_elementsと同じく、まずconfirmedを付けずに呼ぶ。アプリでAIからの読み取りを「常に許可」にした" +
       "マップは、そのまま実データを返す。それ以外のマップは、実データの代わりに確認を促すメッセージだけを" +
@@ -37,7 +38,7 @@ export function registerReadDocument(server: McpServer): void {
       const { client, session } = getContext();
       const map = await resolveMap(client, session, mapId);
 
-      const confirmation = checkReadAllowed(map, mapId, confirmed);
+      const confirmation = checkReadAllowed(map, mapId, confirmed, { viewerUid: session.uid });
       if (confirmation !== null) {
         return { content: [{ type: "text", text: confirmation }] };
       }
@@ -63,7 +64,7 @@ export function registerReadDocument(server: McpServer): void {
           {
             type: "text",
             text: JSON.stringify(
-              { mapId: map.headerId, documentId, title, content: documentContentOf(doc.data) },
+              { mapId: map.headerId, documentId, title, content: documentContentOf(doc.data), updateTime: doc.updateTime },
               null,
               2
             ),

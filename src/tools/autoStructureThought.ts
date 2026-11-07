@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getContext } from "../mcpContext.js";
+import { countElements } from "../domain/planGate.js";
 import { assertDetailLengths } from "../domain/detailLimit.js";
 import { ancestorDetailsInLevels, buildLevelsAppendWrites, locateInLevels, readLevelsSnapshot } from "../domain/levelsOps.js";
 import {
@@ -42,7 +43,7 @@ export function registerAutoStructureThought(server: McpServer): void {
     },
     async ({ mapId, parentElementId, nodes }) => {
       assertDetailLengths(allDetails(nodes));
-      const { client, session } = getContext();
+      const { client, session, planGate } = getContext();
       const map = await resolveMap(client, session, mapId);
       assertCanEditMap(map, session);
       const levelsPath = levelsPathOf(map);
@@ -57,6 +58,8 @@ export function registerAutoStructureThought(server: McpServer): void {
             `parentElementId(${targetParentId})がこのマップに見つかりません。list_elementsで確認してください。`
           );
         }
+        // 無料プランの上限（リモート版だけ）。今読んだ levels の全要素数で判定する
+        await planGate?.assertCanAddElements(map.ownerUid, countElements(snapshot), forest.length);
         levelsPathResult = formatPath(map.header.title, ancestorDetailsInLevels(snapshot, targetParentId));
         return buildLevelsAppendWrites(levelsPath, snapshot, forest, targetParentId, map.header.isTodo);
       });

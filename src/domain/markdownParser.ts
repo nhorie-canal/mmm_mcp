@@ -31,11 +31,11 @@ const HEADING_PATTERN = /^(#{1,6})\s+(.*)$/;
 const SCHEDULE_PATTERN = /\s*(📅|🛫)\s*(\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2})?)/gu;
 
 /** 要素の1行目から 📅・🛫 の日付を取り出す。読めない日付は本文に残す。 */
-function extractSchedule(detail: string): { detail: string; schedule?: ScheduleEntry } {
+function extractSchedule(detail: string, timeZone?: string): { detail: string; schedule?: ScheduleEntry } {
   const schedule: ScheduleEntry = {};
   const rest = detail.replace(SCHEDULE_PATTERN, (whole, mark: string, text: string) => {
     try {
-      schedule[mark === "📅" ? "due" : "start"] = parseScheduleDate(text);
+      schedule[mark === "📅" ? "due" : "start"] = parseScheduleDate(text, timeZone);
       return "";
     } catch {
       return whole;
@@ -56,7 +56,7 @@ function extractSchedule(detail: string): { detail: string; schedule?: ScheduleE
  */
 export function parseMarkdownForImport(
   markdownText: string,
-  { headingsAsNodes }: { headingsAsNodes: boolean }
+  { headingsAsNodes, timeZone }: { headingsAsNodes: boolean; timeZone?: string }
 ): ParsedMarkdown {
   // Windows(CRLF)・古い Mac(CR)の改行は LF にそろえる。`\r`が行末に残ると、
   // 行の終わりを`$`で見る箇条書き・見出しの判定に1行も合わず、何も取り込めない。
@@ -98,7 +98,7 @@ export function parseMarkdownForImport(
         detail = checkboxMatch[2] ?? "";
       }
 
-      const extracted = extractSchedule(detail);
+      const extracted = extractSchedule(detail, timeZone);
       currentNode = {
         id: newDocId(),
         detail: extracted.detail,

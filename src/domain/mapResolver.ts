@@ -1,4 +1,4 @@
-import type { AuthSession } from "../auth/session.js";
+import type { UserSession } from "../auth/session.js";
 import type { FirestoreRestClient } from "../firestore/restClient.js";
 import { canEditHeader, headerFromFirestore, type HeaderDoc } from "./header.js";
 
@@ -23,7 +23,7 @@ export class MapNotFoundError extends Error {
  */
 export async function resolveMap(
   client: FirestoreRestClient,
-  session: AuthSession,
+  session: UserSession,
   mapId: string
 ): Promise<ResolvedMap> {
   const own = await client.getDocument(`users/${session.uid}/headers/${mapId}`);
@@ -59,7 +59,7 @@ export function levelsPathOf(map: ResolvedMap): string {
  * 書き込み系ツールの入口で呼ぶ。閲覧のみで共有されているマップに対する
  * 書き込みを、Firestoreルールに委ねる前にわかりやすいメッセージで止める。
  */
-export function assertCanEditMap(map: ResolvedMap, session: AuthSession): void {
+export function assertCanEditMap(map: ResolvedMap, session: UserSession): void {
   if (!canEditHeader(map.header, session.uid, session.email)) {
     throw new Error(
       `「${map.header.title}」は閲覧のみで共有されているため編集できません。`

@@ -16,16 +16,19 @@ export function registerCreateMap(server: McpServer): void {
       isTodo: z.boolean().describe("TODOマップ(要素にチェックボックスを付ける)にするかどうか"),
     },
     async ({ title, isTodo }) => {
-      const { client, session } = getContext();
+      const { client, session, planGate } = getContext();
 
       const headersPath = `users/${session.uid}/headers`;
       // 振り直しは読んだ時点の updateTime を前提条件にするので、読んでから書くまでに
       // ほかの端末で見出しが変わると失敗する。そのときは読み取りからやり直す。
       // id はやり直しても同じものを使う(失敗した commit は何も書いていない)。
       const headerId = newDocId();
-      await client.runOptimistic(async () =>
-        buildCreateMapWrites(headersPath, await client.listDocuments(headersPath), headerId, title, isTodo)
-      );
+      await client.runOptimistic(async () => {
+        const existing = await client.listDocuments(headersPath);
+        // 無料プランの上限（リモート版だけ）。今読んだ見出しの件数で判定する
+        await planGate?.assertCanAddMap(existing.length);
+        return buildCreateMapWrites(headersPath, existing, headerId, title, isTodo);
+      });
 
       return {
         content: [

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getContext } from "../mcpContext.js";
+import { countElements } from "../domain/planGate.js";
 import { ancestorDetailsInLevels, buildLevelsAppendWrites, locateInLevels, readLevelsSnapshot } from "../domain/levelsOps.js";
 import {
   resolveMap,
@@ -21,7 +22,7 @@ export function registerImportMarkdownContext(server: McpServer): void {
       "対象は既存マップのみ(新規作成が必要ならcreate_mapを先に呼ぶ)。",
     {
       mapId: z.string().describe("list_mapsで得たマップのID"),
-      markdown: z.string().min(1).describe("取り込むMarkdownテキスト(1要素5000文字まで。超える要素があれば何も書かない)。要素の1行目に「📅 2026-10-15」(期日)・「🛫 2026-10-12」(着手日)と書くと日付として取り込む。時刻付きは「📅 2026-10-15 09:00」(このPCの現地時刻)"),
+      markdown: z.string().min(1).describe("取り込むMarkdownテキスト(1要素5000文字まで。超える要素があれば何も書かない)。要素の1行目に「📅 2026-10-15」(期日)・「🛫 2026-10-12」(着手日)と書くと日付として取り込む。時刻付きは「📅 2026-10-15 09:00」(アプリで設定しているタイムゾーンの時刻)"),
       parentElementId: z
         .string()
         .nullable()
@@ -29,13 +30,13 @@ export function registerImportMarkdownContext(server: McpServer): void {
         .describe("この要素の内側(子)として取り込む。マップの最上位に取り込む場合はnullまたは省略"),
     },
     async ({ mapId, markdown, parentElementId }) => {
-      const { client, session } = getContext();
+      const { client, session, getTimeZone, planGate } = getContext();
       const map = await resolveMap(client, session, mapId);
       assertCanEditMap(map, session);
       const levelsPath = levelsPathOf(map);
       const targetParentId = parentElementId ?? null;
 
-      const parsed = parseMarkdownForImport(markdown, { headingsAsNodes: true });
+      const parsed = parseMarkdownForImport(markdown, { headingsAsNodes: true, timeZone: await getTimeZone() });
       if (parsed.nodes.length === 0) {
         throw new Error("Markdownからリスト項目・見出しが見つかりませんでした。");
       }
@@ -49,6 +50,8 @@ export function registerImportMarkdownContext(server: McpServer): void {
             `parentElementId(${targetParentId})がこのマップに見つかりません。list_elementsで確認してください。`
           );
         }
+        // 無料プランの上限（リモート版だけ）。今読んだ levels の全要素数で判定する
+        await planGate?.assertCanAddElements(map.ownerUid, countElements(snapshot), parsed.nodes.length);
         levelsPathResult = formatPath(map.header.title, ancestorDetailsInLevels(snapshot, targetParentId));
         return buildLevelsAppendWrites(levelsPath, snapshot, parsed.nodes, targetParentId, map.header.isTodo);
       });

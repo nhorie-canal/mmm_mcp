@@ -9,7 +9,7 @@ import { parseDocumentDetail } from "../domain/documentRef.js";
 import { checkReadAllowed } from "./readGate.js";
 
 // ElementNodeの`done`を`checked`という名前で公開する(仕様書の用語に合わせる)。
-function toChecked(nodes: ElementNode[]): unknown[] {
+function toChecked(nodes: ElementNode[], timeZone?: string): unknown[] {
   return nodes.map((n) => ({
     id: n.id,
     detail: n.detail,
@@ -17,9 +17,9 @@ function toChecked(nodes: ElementNode[]): unknown[] {
     ...(parseDocumentDetail(n.detail) ? { document: parseDocumentDetail(n.detail) } : {}),
     checked: n.done,
     // 日付は付いているときだけ返す(docs/schedule.md §3 MCP)
-    ...(n.schedule?.due ? { due: formatScheduleDate(n.schedule.due) } : {}),
-    ...(n.schedule?.start ? { start: formatScheduleDate(n.schedule.start) } : {}),
-    children: toChecked(n.children),
+    ...(n.schedule?.due ? { due: formatScheduleDate(n.schedule.due, timeZone) } : {}),
+    ...(n.schedule?.start ? { start: formatScheduleDate(n.schedule.start, timeZone) } : {}),
+    children: toChecked(n.children, timeZone),
   }));
 }
 
@@ -28,7 +28,7 @@ export function registerListElements(server: McpServer): void {
     "list_elements",
     "指定したマップ内の全要素と親子関係、チェック状態(checked)、期日(due)・着手日(start)を返す。" +
       "dueとstartは付いている要素にだけあり、終日なら\"YYYY-MM-DD\"、時刻付きなら" +
-      "\"YYYY-MM-DD HH:mm\"(このPCの現地時刻)。" +
+      "\"YYYY-MM-DD HH:mm\"(アプリで設定しているタイムゾーンの時刻)。" +
       "checkedは各要素にFirestoreへ実際に保存されている生の値であり、" +
       "「祖先がチェック済みなら配下も完了とみなす」という加工は行っていない。" +
       "そう解釈したい場合は、返ってきたツリーを見てこちら(呼び出す側)で判断すること。" +
@@ -52,11 +52,11 @@ export function registerListElements(server: McpServer): void {
         ),
     },
     async ({ mapId, confirmed }) => {
-      const { client, session } = getContext();
+      const { client, session, getTimeZone } = getContext();
       const map = await resolveMap(client, session, mapId);
 
       // 実データは確認のゲートを通過するまで一切読みに行かない(readGate.ts)
-      const confirmation = checkReadAllowed(map, mapId, confirmed);
+      const confirmation = checkReadAllowed(map, mapId, confirmed, { viewerUid: session.uid });
       if (confirmation !== null) {
         return { content: [{ type: "text", text: confirmation }] };
       }
@@ -73,7 +73,7 @@ export function registerListElements(server: McpServer): void {
                 mapId: map.headerId,
                 title: map.header.title,
                 isTodo: map.header.isTodo,
-                elements: toChecked(tree),
+                elements: toChecked(tree, await getTimeZone()),
               },
               null,
               2

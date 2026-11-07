@@ -1,4 +1,4 @@
-import type { AuthSession } from "../auth/session.js";
+import type { UserSession } from "../auth/session.js";
 import { FIREBASE_PROJECT_ID } from "../firebaseConfig.js";
 import {
   decodeFields,
@@ -8,7 +8,15 @@ import {
   type FirestoreValue,
 } from "./valueCodec.js";
 
-const BASE_URL = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents`;
+// MMM_FIRESTORE_EMULATOR_HOST があるときだけエミュレータへ向ける（リモート版 MCP の検証用）。
+// 一般的な FIRESTORE_EMULATOR_HOST は読まない: npm で公開しているローカル版が、開発者のシェルに残った
+// その変数のせいで、本番の ID トークンを平文でエミュレータへ送ってしまわないように。
+// リモート版の入口（mcp-remote）だけが、検証のときにこの名前を設定する。呼ぶたびに読む。
+function baseUrl(): string {
+  const emulator = process.env.MMM_FIRESTORE_EMULATOR_HOST;
+  const origin = emulator ? `http://${emulator}` : "https://firestore.googleapis.com";
+  return `${origin}/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents`;
+}
 
 export interface FirestoreDoc {
   id: string;
@@ -87,7 +95,7 @@ export interface FirestoreWrite {
 }
 
 export class FirestoreRestClient {
-  constructor(private session: AuthSession) {}
+  constructor(private session: UserSession) {}
 
   /**
    * [runOptimistic]の書き込みが成功したあとに呼ぶ(MCP の利用の印をつけるため)。
@@ -104,7 +112,7 @@ export class FirestoreRestClient {
   }
 
   async getDocument(path: string): Promise<FirestoreDoc | null> {
-    const res = await fetch(`${BASE_URL}/${encodePath(path)}`, {
+    const res = await fetch(`${baseUrl()}/${encodePath(path)}`, {
       headers: await this.headers(),
     });
     if (res.status === 404) return null;
@@ -167,7 +175,7 @@ export class FirestoreRestClient {
     const results: FirestoreDoc[] = [];
     let pageToken: string | undefined;
     do {
-      const url = new URL(`${BASE_URL}/${encodePath(collectionPath)}`);
+      const url = new URL(`${baseUrl()}/${encodePath(collectionPath)}`);
       url.searchParams.set("pageSize", "300");
       if (pageToken) url.searchParams.set("pageToken", pageToken);
       const res = await fetch(url, { headers: await this.headers() });
@@ -192,7 +200,7 @@ export class FirestoreRestClient {
     collectionPath: string,
     fields: Record<string, unknown>
   ): Promise<FirestoreDoc> {
-    const res = await fetch(`${BASE_URL}/${encodePath(collectionPath)}`, {
+    const res = await fetch(`${baseUrl()}/${encodePath(collectionPath)}`, {
       method: "POST",
       headers: await this.headers(),
       body: JSON.stringify({ fields: encodeFields(fields) }),
@@ -206,7 +214,7 @@ export class FirestoreRestClient {
 
   /** 指定パスに、全フィールドを置き換える形で書き込む(無ければ作成)。 */
   async setDocument(docPath: string, fields: Record<string, unknown>): Promise<void> {
-    const res = await fetch(`${BASE_URL}/${encodePath(docPath)}`, {
+    const res = await fetch(`${baseUrl()}/${encodePath(docPath)}`, {
       method: "PATCH",
       headers: await this.headers(),
       body: JSON.stringify({ fields: encodeFields(fields) }),
@@ -220,7 +228,7 @@ export class FirestoreRestClient {
   /** 指定したフィールドだけを部分更新する。 */
   async updateDocument(docPath: string, fields: Record<string, unknown>): Promise<void> {
     const mask = Object.keys(fields).map((key) => `updateMask.fieldPaths=${encodeURIComponent(key)}`);
-    const url = `${BASE_URL}/${encodePath(docPath)}?${mask.join("&")}`;
+    const url = `${baseUrl()}/${encodePath(docPath)}?${mask.join("&")}`;
     const res = await fetch(url, {
       method: "PATCH",
       headers: await this.headers(),
@@ -233,7 +241,7 @@ export class FirestoreRestClient {
   }
 
   async deleteDocument(docPath: string): Promise<void> {
-    const res = await fetch(`${BASE_URL}/${encodePath(docPath)}`, {
+    const res = await fetch(`${baseUrl()}/${encodePath(docPath)}`, {
       method: "DELETE",
       headers: await this.headers(),
     });
@@ -294,7 +302,7 @@ export class FirestoreRestClient {
         };
       }),
     };
-    const res = await fetch(`${BASE_URL}:commit`, {
+    const res = await fetch(`${baseUrl()}:commit`, {
       method: "POST",
       headers: await this.headers(),
       body: JSON.stringify(body),

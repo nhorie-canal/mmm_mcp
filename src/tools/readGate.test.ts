@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { checkReadAllowed } from "./readGate.js";
+import { checkReadAllowed, setConfirmationTtlMs } from "./readGate.js";
 import type { ResolvedMap } from "../domain/mapResolver.js";
 
 function mapWith(permission: string | undefined, title = "旅行計画"): ResolvedMap {
@@ -27,4 +27,25 @@ test("checkReadAllowed", async (t) => {
   await t.test("別のマップの確認は引き継がない", () => {
     assert.notEqual(checkReadAllowed(mapWith("ask"), "m-other", undefined), null);
   });
+});
+
+test("確認済みの印は利用者ごと。ほかの利用者には引き継がない", () => {
+  const map = mapWith("ask");
+  assert.equal(checkReadAllowed(map, "m-shared", true, { viewerUid: "alice" }), null);
+  assert.equal(checkReadAllowed(map, "m-shared", undefined, { viewerUid: "alice" }), null);
+  assert.notEqual(checkReadAllowed(map, "m-shared", undefined, { viewerUid: "bob" }), null);
+});
+
+test("覚える時間を設定すると、過ぎたら改めて確認する（既定はプロセスの間ずっと）", () => {
+  const map = mapWith("ask");
+  assert.equal(checkReadAllowed(map, "m-ttl0", true, { viewerUid: "a", now: 0 }), null);
+  assert.equal(checkReadAllowed(map, "m-ttl0", undefined, { viewerUid: "a", now: 10 * 3600_000 }), null);
+  setConfirmationTtlMs(3600_000);
+  try {
+    assert.equal(checkReadAllowed(map, "m-ttl1", true, { viewerUid: "a", now: 0 }), null);
+    assert.equal(checkReadAllowed(map, "m-ttl1", undefined, { viewerUid: "a", now: 3599_000 }), null);
+    assert.notEqual(checkReadAllowed(map, "m-ttl1", undefined, { viewerUid: "a", now: 3601_000 }), null);
+  } finally {
+    setConfirmationTtlMs(Number.POSITIVE_INFINITY);
+  }
 });

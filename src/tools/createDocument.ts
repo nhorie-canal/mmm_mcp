@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getContext } from "../mcpContext.js";
+import { countElements, countDocumentElements } from "../domain/planGate.js";
 import { ancestorDetailsInLevels, locateInLevels, readLevelsSnapshot } from "../domain/levelsOps.js";
 import { assertCanEditMap, formatPath, headerPathOf, levelsPathOf, resolveMap } from "../domain/mapResolver.js";
 import { buildDocumentCreateWrites, assertDocumentSize, MAX_DOCUMENT_BYTES } from "../domain/documentOps.js";
@@ -13,7 +14,7 @@ export function registerCreateDocument(server: McpServer): void {
       "(parentElementIdを省略またはnullにすると、マップの最上位の末尾)。" +
       "作った文書の要素は、アプリでは書類のアイコンとタイトルで見える(タップすると整形した文書が開く。" +
       "```mermaid のブロックは図になる)。中身はread_documentで読める。" +
-      "既存の文書の書き換えはできない(新しく作るだけ)。" +
+      "既存の文書の書き換えはupdate_documentを使う(これは新しく作るだけ)。" +
       `contentはMarkdown(UTF-8で${MAX_DOCUMENT_BYTES}バイトまで。超えると何も書かずにエラーを返す)。` +
       "titleを省略すると、contentの最初の見出し(# の行)、無ければ最初の行がタイトルになる。" +
       "追加先(parentElementId)はlist_elementsの結果を見て判断すること。",
@@ -33,7 +34,7 @@ export function registerCreateDocument(server: McpServer): void {
     },
     async ({ mapId, parentElementId, content, title }) => {
       assertDocumentSize(content);
-      const { client, session } = getContext();
+      const { client, session, planGate } = getContext();
       const map = await resolveMap(client, session, mapId);
       assertCanEditMap(map, session);
       const levelsPath = levelsPathOf(map);
@@ -50,6 +51,8 @@ export function registerCreateDocument(server: McpServer): void {
             `parentElementId(${targetParentId})がこのマップに見つかりません。list_elementsで確認してください。`
           );
         }
+        // 無料プランの上限（リモート版だけ）。要素の数と、そのマップの文書の数で判定する
+        await planGate?.assertCanAddDocument(map.ownerUid, countElements(snapshot), countDocumentElements(snapshot));
         const plan = buildDocumentCreateWrites(levelsPath, documentsPath, snapshot, {
           documentId,
           elementId,

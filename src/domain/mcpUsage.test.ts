@@ -42,3 +42,9 @@ test("更新時刻が取れていなければ、存在することを前提に�
   assert.equal(w?.requireExists, true);
   assert.equal(w?.requireUpdateTime, undefined);
 });
+
+test("localDayKey: タイムゾーンを指定したら、その土地の日付にする", () => {
+  const t = new Date("2026-10-15T20:00:00Z"); // 東京は翌日の朝5時、ロサンゼルスは同日の13時
+  assert.equal(localDayKey(t, "Asia/Tokyo"), "2026-10-16");
+  assert.equal(localDayKey(t, "America/Los_Angeles"), "2026-10-15");
+});

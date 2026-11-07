@@ -5,6 +5,7 @@ import { registerListMaps } from "./tools/listMaps.js";
 import { registerListElements } from "./tools/listElements.js";
 import { registerReadDocument } from "./tools/readDocument.js";
 import { registerCreateDocument } from "./tools/createDocument.js";
+import { registerUpdateDocument } from "./tools/updateDocument.js";
 import { registerCreateMap } from "./tools/createMap.js";
 import { registerAutoStructureThought } from "./tools/autoStructureThought.js";
 import { registerUpdateTaskStatus } from "./tools/updateTaskStatus.js";
@@ -14,11 +15,14 @@ import { registerDeleteElements } from "./tools/deleteElements.js";
 import { registerMoveElement } from "./tools/moveElement.js";
 import { registerSetSchedule } from "./tools/setSchedule.js";
 import { registerSignIn } from "./tools/signIn.js";
+import { LocalSwitch } from "./domain/localSwitch.js";
+import { guardTools } from "./tools/guardTools.js";
+import { fetchConfigApp } from "./firestore/configApp.js";
 
 const server = new McpServer(
   {
     name: "matryoshka-mindmap",
-    version: "0.4.0",
+    version: "0.5.0",
   },
   {
     instructions:
@@ -30,10 +34,16 @@ const server = new McpServer(
   }
 );
 
+// ローカル版を止めるスイッチ（config/app.localMcpEnabled が false のとき）。
+// 全ツールを包み、止まっているときは何も読み書きせず、リモート版への案内だけを返す。
+const localSwitch = new LocalSwitch(fetchConfigApp);
+guardTools(server, localSwitch);
+
 registerListMaps(server);
 registerListElements(server);
 registerReadDocument(server);
 registerCreateDocument(server);
+registerUpdateDocument(server);
 registerCreateMap(server);
 registerAutoStructureThought(server);
 registerUpdateTaskStatus(server);

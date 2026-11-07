@@ -51,8 +51,8 @@ Record the tasks and notes that come up in this working folder with the Matryosh
 - **Keep notes such as research, comparisons, and design memos in Markdown, and draw diagrams
   in ```mermaid blocks.** If there is a GitHub repository, put them in `docs/` and add the file's
   URL as its own element under the related item (GitHub renders Mermaid too). Otherwise, create
-  a Markdown document (`create_document`) under the related item. Documents cannot be edited,
-  so to revise one, create a new document and delete the old one.
+  a Markdown document (`create_document`) under the related item. To revise one, read it with
+  `read_document`, then overwrite it with `update_document` passing the returned `updateTime` as `baseUpdateTime` (do not recreate it and delete the old one).
 - When asked about progress, do not answer from memory: re-read with `list_elements` first
   (items checked directly in the app are not visible until you re-read).
 - Before moving, closing, or deleting items, re-read their current state. Never uncheck items a person has checked.
@@ -69,7 +69,7 @@ The reasons:
 | Draw diagrams in Mermaid | Both the app and GitHub render them as diagrams, and an AI reading them later still understands the content |
 | Re-read when asked | The MCP server does not learn about changes made in the app on its own |
 
-- Creating Markdown documents requires MCP server 0.4.0 or later and app 5.3.0 or later.
+- Creating Markdown documents requires MCP server 0.4.0 or later and app 5.3.0 or later (rewriting them with `update_document` requires 0.5.0 or later).
 - On the free plan, each map can hold up to 3 documents.
 
 ## Updating to the Latest Version

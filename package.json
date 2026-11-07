@@ -1,6 +1,6 @@
 {
   "name": "mmm-mcp-server",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "mcpName": "io.github.nhorie-canal/mmm-mcp-server",
   "description": "Matryoshka Mind Map の自分のデータをClaudeから直接読み書きするMCPサーバー",
   "license": "MIT",
@@ -36,9 +36,9 @@
     "prepublishOnly": "npm test"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "open": "^10.1.0",
-    "zod": "^3.24.1"
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

@@ -15,7 +15,7 @@ const dateSchema = z
   .nullable()
   .optional()
   .describe(
-    "終日なら\"YYYY-MM-DD\"、時刻付きなら\"YYYY-MM-DD HH:mm\"(このPCの現地時刻)。" +
+    "終日なら\"YYYY-MM-DD\"、時刻付きなら\"YYYY-MM-DD HH:mm\"(アプリで設定しているタイムゾーンの時刻)。" +
       "nullで外す。省略するとその日付には触れない"
   );
 
@@ -38,14 +38,15 @@ export function registerSetSchedule(server: McpServer): void {
         .min(1),
     },
     async ({ mapId, updates }) => {
-      // 日付の書き方の誤りは、何も読まないうちに返す
+      const { client, session, getTimeZone } = getContext();
+      // 日付の書き方の誤りは、マップを読まないうちに返す
+      const timeZone = await getTimeZone();
       const parsed: ScheduleUpdate[] = updates.map((u) => ({
         elementId: u.elementId,
-        due: u.due == null ? u.due : parseScheduleDate(u.due),
-        start: u.start == null ? u.start : parseScheduleDate(u.start),
+        due: u.due == null ? u.due : parseScheduleDate(u.due, timeZone),
+        start: u.start == null ? u.start : parseScheduleDate(u.start, timeZone),
       }));
 
-      const { client, session } = getContext();
       const map = await resolveMap(client, session, mapId);
       assertCanEditMap(map, session);
       const levelsPath = levelsPathOf(map);

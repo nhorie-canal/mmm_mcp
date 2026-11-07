@@ -12,7 +12,22 @@ import type { ResolvedMap } from "../domain/mapResolver.js";
 // confirmedパラメータの方式に一本化した。呼び出し側が実際にユーザーへ
 // 確認したかをこちらで検証する手段は無いため、確実な強制ではなく
 // ベストエフォートであることを理解した上で採用している。
-const confirmedMapIds = new Set<string>();
+const confirmedMaps = new Map<string, number>();
+
+/**
+ * 確認済みの印を覚える時間。ローカル版は1会話＝1プロセスなのでプロセスが生きている間（既定）。
+ * 常時動くリモート版は会話の区切りを知らないので、短い時間に設定し、利用者ごとに覚える。
+ */
+let confirmationTtlMs = Number.POSITIVE_INFINITY;
+export function setConfirmationTtlMs(ms: number): void {
+  confirmationTtlMs = ms;
+}
+
+export interface ReadGateOptions {
+  /** 確認を覚える単位に使う利用者の uid（リモート版は利用者が混ざらないよう必ず渡す）。 */
+  viewerUid?: string;
+  now?: number;
+}
 
 function buildConfirmationRequestText(title: string): string {
   return (
@@ -38,7 +53,15 @@ class AiReadDeniedError extends Error {
  * 読んでよければ null、確認が要るときは返すべき確認の文面を返す。
  * 「常に拒否」のマップは投げる。確認済みの印は同じサーバープロセスの間、マップ単位で共有する。
  */
-export function checkReadAllowed(map: ResolvedMap, mapId: string, confirmed: boolean | undefined): string | null {
+export function checkReadAllowed(
+  map: ResolvedMap,
+  mapId: string,
+  confirmed: boolean | undefined,
+  { viewerUid = "", now = Date.now() }: ReadGateOptions = {}
+): string | null {
+  const key = `${viewerUid}:${mapId}`;
+  const at = confirmedMaps.get(key);
+  const isConfirmed = at !== undefined && now - at < confirmationTtlMs;
   // マップ単位のAI読み取り許可(aiReadPermission)。このフィールドは
   // アプリのマップ編集画面からのみ変更でき、MCPサーバーのどの
   // ツールからも書き込まない(AIが自分自身に許可を与えられると
@@ -47,9 +70,13 @@ export function checkReadAllowed(map: ResolvedMap, mapId: string, confirmed: boo
     throw new AiReadDeniedError(map.header.title);
   }
   const alwaysAllowed = map.header.aiReadPermission === "allow";
-  if (!alwaysAllowed && !confirmedMapIds.has(mapId)) {
+  if (!alwaysAllowed && !isConfirmed) {
     if (confirmed === true) {
-      confirmedMapIds.add(mapId);
+      // 期限のある設定（リモート版）では、期限切れの印を捨てて増え続けないようにする
+    if (Number.isFinite(confirmationTtlMs)) {
+      for (const [k, at] of confirmedMaps) if (now - at >= confirmationTtlMs) confirmedMaps.delete(k);
+    }
+    confirmedMaps.set(key, now);
     } else {
       return buildConfirmationRequestText(map.header.title);
     }

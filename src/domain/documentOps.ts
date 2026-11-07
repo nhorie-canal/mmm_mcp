@@ -6,8 +6,9 @@
 // documentTitleFromContent)と同じにする。
 
 import type { FirestoreWrite } from "../firestore/restClient.js";
-import { buildLevelsAppendWrites, type LevelsSnapshot } from "./levelsOps.js";
-import { DOCUMENT_SCHEME } from "./documentRef.js";
+import { buildLevelsAppendWrites, buildLevelsPatchWrites, type LevelsSnapshot } from "./levelsOps.js";
+import { DOCUMENT_SCHEME, parseDocumentDetail } from "./documentRef.js";
+import type { ElementNode } from "./levels.js";
 
 /** 1文書の中身の上限(UTF-8のバイト数)。アプリの1ファイルの上限(1,000,000バイト)と同じ。 */
 export const MAX_DOCUMENT_BYTES = 1_000_000;
@@ -113,4 +114,117 @@ export function buildDocumentCreateWrites(
     requireMissing: true,
   };
   return { writes: [...levelWrites, documentWrite], title };
+}
+
+/** 木の中から、文書[documentId]を指す要素をすべて探す（合成などで同じ文書を指す要素が複数ありうる）。 */
+export function findDocumentElements(
+  tree: ElementNode[],
+  documentId: string
+): Array<{ elementId: string; title: string }> {
+  const found: Array<{ elementId: string; title: string }> = [];
+  const walk = (nodes: ElementNode[]) => {
+    for (const node of nodes) {
+      const ref = parseDocumentDetail(node.detail);
+      if (ref && ref.documentId === documentId) found.push({ elementId: node.id, title: ref.title });
+      walk(node.children);
+    }
+  };
+  walk(tree);
+  return found;
+}
+
+/**
+ * 読んでから書くまでの間に文書が変わっていた。**リトライしてはいけない**（読み直した中身を
+ * もとにしていない全文で上書きしてしまう）。呼び出し側のAIが read_document から読み直す。
+ */
+export class DocumentConflictError extends Error {
+  constructor() {
+    super(
+      "文書は、read_documentで読んだあとに変更されています。何も書き込んでいません。" +
+        "read_documentで読み直し、最新の中身をもとに直した全文と、新しいupdateTimeをbaseUpdateTimeに付けてやり直してください。"
+    );
+    this.name = "DocumentConflictError";
+  }
+}
+
+export interface DocumentUpdateTarget {
+  /** この文書を指す要素（通常は1つ）。 */
+  elements: Array<{ elementId: string; title: string }>;
+  /** 書き込みの前提にする updateTime（= baseUpdateTime）。 */
+  updateTime: string;
+}
+
+/**
+ * update_document の前に調べること。要素が無い・中身が無い・読んでから変わっている、のいずれかなら投げる。
+ * [doc]は documents/{docId} を読んだ結果（無ければ null）。
+ */
+export function resolveDocumentUpdate(
+  tree: ElementNode[],
+  documentId: string,
+  doc: { updateTime?: string } | null,
+  baseUpdateTime: string
+): DocumentUpdateTarget {
+  const elements = findDocumentElements(tree, documentId);
+  if (elements.length === 0) {
+    throw new Error(
+      `文書が見つかりません(documentId: ${documentId})。list_elementsで、文書の要素のdocument.documentIdを確認してください。`
+    );
+  }
+  if (!doc) {
+    throw new Error(
+      `「${elements[0].title}」の中身がありません。別の版のアプリでマップを合成したときに切れた参照の可能性があります。` +
+        "新しく作るにはcreate_documentを使ってください。"
+    );
+  }
+  if (!doc.updateTime || doc.updateTime !== baseUpdateTime) throw new DocumentConflictError();
+  return { elements, updateTime: doc.updateTime };
+}
+
+export interface DocumentUpdateInput {
+  documentId: string;
+  target: DocumentUpdateTarget;
+  content: string;
+  /** 引数で指定されたタイトル。省略または空なら、新しい中身から決める（アプリの保存と同じ）。 */
+  title?: string;
+  now: Date;
+}
+
+export interface DocumentUpdatePlan {
+  writes: FirestoreWrite[];
+  title: string;
+  titleChanged: boolean;
+}
+
+/**
+ * 既存の文書の中身を上書きする書き込み。アプリが保存時に行うのと同じく、タイトルは
+ * 新しい中身（または引数）から決め直し、変わった要素だけ2行目を直す（同じ文書を指す要素が
+ * 複数あれば全部）。文書の中身と levels は別のドキュメントなので1回の commit にまとめ、
+ * 文書は読んだ updateTime を前提条件にする。
+ */
+export function buildDocumentUpdateWrites(
+  levelsPath: string,
+  documentsPath: string,
+  snapshot: LevelsSnapshot,
+  input: DocumentUpdateInput
+): DocumentUpdatePlan {
+  assertDocumentSize(input.content);
+  const given = input.title === undefined ? "" : normalizeTitle(input.title);
+  const title = given !== "" ? given : documentTitleFromContent(input.content);
+  const stale = input.target.elements.filter((e) => e.title !== title);
+  const writes: FirestoreWrite[] = [];
+  if (stale.length > 0) {
+    writes.push(
+      ...buildLevelsPatchWrites(
+        levelsPath,
+        snapshot,
+        stale.map((e) => ({ elementId: e.elementId, patch: { detail: encodeDocumentDetail(input.documentId, title) } }))
+      ).writes
+    );
+  }
+  writes.push({
+    path: `${documentsPath}/${input.documentId}`,
+    fields: { content: input.content, updatedAt: input.now },
+    requireUpdateTime: input.target.updateTime,
+  });
+  return { writes, title, titleChanged: stale.length > 0 };
 }

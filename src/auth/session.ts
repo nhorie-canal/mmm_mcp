@@ -8,7 +8,14 @@ const EXPIRY_MARGIN_MS = 60_000;
  * refresh_tokenは使うたびに新しい値へローテーションされるため、
  * 更新のたびにディスクへ書き戻す。
  */
-export class AuthSession {
+/** ツールとFirestoreクライアントが使う、1人の利用者の認証の最小限の形（ローカル版は AuthSession、リモート版は呼び出しごとに用意する）。 */
+export interface UserSession {
+  readonly uid: string;
+  readonly email: string | null;
+  getValidIdToken(): Promise<string>;
+}
+
+export class AuthSession implements UserSession {
   private idToken: string | null = null;
   private expiresAt = 0;
   // 複数のツール呼び出しがほぼ同時にトークン切れを検知したとき、

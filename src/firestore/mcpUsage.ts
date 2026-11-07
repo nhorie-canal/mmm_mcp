@@ -13,8 +13,13 @@ type UsageClient = Pick<FirestoreRestClient, "getDocument" | "commitWrites">;
 export class McpUsageRecorder {
   private recordedDay: string | null = null;
 
-  async record(client: UsageClient, uid: string, now: Date = new Date()): Promise<void> {
-    const today = localDayKey(now);
+  async record(
+    client: UsageClient,
+    uid: string,
+    now: Date = new Date(),
+    timeZone?: string
+  ): Promise<void> {
+    const today = localDayKey(now, timeZone);
     if (this.recordedDay === today) return;
     try {
       const doc = await client.getDocument(mcpUsagePath(uid));

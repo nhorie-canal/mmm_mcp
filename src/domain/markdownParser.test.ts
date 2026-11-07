@@ -186,3 +186,8 @@ test("parseMarkdownForImport の改行コード", async (t) => {
     });
   }
 });
+
+test("timeZone を渡すと、時刻付きの期日をそのタイムゾーンで読む", () => {
+  const parsed = parseMarkdownForImport("- 会議 📅 2026-10-15 09:00", { headingsAsNodes: true, timeZone: "America/Los_Angeles" });
+  assert.deepEqual(parsed.nodes[0].schedule?.due?.at, new Date("2026-10-15T16:00:00Z"));
+});

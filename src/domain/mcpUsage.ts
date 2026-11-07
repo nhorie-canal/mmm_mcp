@@ -1,3 +1,4 @@
+import { zonedParts } from "./scheduleText.js";
 import type { FirestoreWrite } from "../firestore/restClient.js";
 
 /** MCP の利用の印を置くドキュメント(`users/{uid}/private/usage`)のパス。 */
@@ -5,11 +6,12 @@ export function mcpUsagePath(uid: string): string {
   return `users/${uid}/private/usage`;
 }
 
-/** MCP を動かしている PC の現地の日付(YYYY-MM-DD)。 */
-export function localDayKey(now: Date): string {
-  const y = String(now.getFullYear()).padStart(4, "0");
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
+/** アプリで設定しているタイムゾーン（無ければ PC の現地）の日付(YYYY-MM-DD)。 */
+export function localDayKey(now: Date, timeZone?: string): string {
+  const p = zonedParts(now, timeZone);
+  const y = String(p.y).padStart(4, "0");
+  const m = String(p.mo).padStart(2, "0");
+  const d = String(p.d).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
 
