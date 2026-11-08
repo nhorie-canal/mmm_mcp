@@ -1,24 +1,84 @@
-# Step-by-Step Setup
+# Setup
 
 [Back to README](https://github.com/nhorie-canal/mmm_mcp/blob/main/README.md)
 
+## Remote version (recommended, nothing to install)
+
+Register a URL with your AI and sign in in the browser. No terminal and no Node.js needed.
+
+### What you need
+
+- A Matryoshka Mind Map account. **Anonymous-only accounts cannot be used.** Link Google, Apple, or an email address first (in the app: My Page → "Link account").
+- An AI that supports remote MCP connectors (tested with Claude on the web, desktop, mobile, and Claude Code). Claude's Free plan allows one custom connector.
+
+### Claude (web, desktop, mobile)
+
+1. Open Claude and go to **Settings → Customize → Connectors**
+2. Choose **+ Add → Add custom connector**
+3. Enter `mmm` as the name, paste this URL, and press **Add**:
+
+   ```
+   https://mmm.spheres.jp/mcp
+   ```
+
+4. Press **Connect** on the new mmm connector
+5. A browser window opens: sign in with the same account as the app (Google, Apple, or email) and press **Allow**
+6. Back in Claude, it is connected. The same connection also appears in the Claude mobile app
+
+The same URL (with a copy button) and steps are in the app under My Page → "Connect to AI".
+
+### Claude Code
+
+```bash
+claude mcp add --transport http mmm https://mmm.spheres.jp/mcp
+```
+
+Inside Claude Code, open `/mcp`, choose mmm, and sign in in the browser.
+
+### Try it out
+
+- "Show me my mmm maps."
+- "Add a task called [task] to the [map name] map."
+- "I finished [task] in the [map name] map."
+- "I'll paste some notes in Markdown; import them into the [map name] map."
+
+Only the first time a map's contents (the text of its elements) are read, the AI asks for your permission. The same map is remembered for a while (up to 24 hours). There is no way for the server to verify that the AI actually asked you, so this is best-effort and depends on the AI you use.
+
+### Free-plan limits and call count
+
+The same limits as the app apply to writes from AI (free: 20 maps, 300 elements per map, 3 documents per map; the paid plan has no limits). When a limit is reached, the AI writes nothing and tells you why and how to continue. You can subscribe from My Page in the app (first month free). Connect the AI with the same account you subscribed with; connecting with a different account is treated as free.
+
+As a safeguard against abuse, each person can call the tools up to 1,000 times per day (resets at 00:00 UTC).
+
+### Disconnecting
+
+Remove mmm in Claude under **Settings → Customize → Connectors**. Deleting your account in the app removes every connection grant.
+
+---
+
+## Old local version (npx / .mcpb)
+
+> **The local version is being phased out.** It gets no new features and will be stopped. Please move to the remote version above.
+> To switch, remove the local mmm from your AI's settings and add the remote one with the steps above (your account data carries over).
+> The rest of this page is the local version, for the time being.
+
 This guide starts from how to open the terminal (the window where you type commands). It should work on both macOS and Windows, but it has only been tested on real machines running macOS.
 
-## 1. Prerequisites
+### 1. Prerequisites
 
 - A Matryoshka Mind Map account (**anonymous-only accounts cannot be used.** Make sure you can log in with Google, Apple, or an email address. You can also link one later with the "Link email address" feature in the app).
 - An MCP-compatible AI agent (tested with Claude Desktop / Claude Code; other MCP-compatible clients should generally work too).
 - Node.js (the runtime that runs the tool; you will install it in Step 3).
 
-## 2. Open the Terminal
+### 2. Open the Terminal
 
-### On macOS
+#### On macOS
 
 1. Press `Command` + `Space` on your keyboard (opens Spotlight search).
 2. Type "Terminal".
 3. Click "Terminal" in the results, or press Enter.
 
-### On Windows
+#### On Windows
 
 1. Press the `Windows` key on your keyboard (opens Start menu search).
 2. Type "PowerShell".
@@ -26,7 +86,7 @@ This guide starts from how to open the terminal (the window where you type comma
 
 Once a dark (or light) window opens, you are ready. For the rest of the steps, paste the commands into this window one line at a time and press Enter (the commands themselves are the same on macOS and Windows).
 
-## 3. Install Node.js
+### 3. Install Node.js
 
 Check whether Node.js is already installed with this command:
 
@@ -46,11 +106,11 @@ When the installation is finished, go back to the terminal and check again:
 node --version
 ```
 
-## 4. Log In
+### 4. Log In
 
 Choose one of the following three options based on how you usually log in to the Matryoshka Mind Map app. **None of these methods require any setup on your part beforehand.** The first run downloads the tool, so it may take a moment.
 
-### If you log in with Google
+#### If you log in with Google
 
 ```bash
 npx -y -p mmm-mcp-server@latest mmm-login login --method google
@@ -58,7 +118,7 @@ npx -y -p mmm-mcp-server@latest mmm-login login --method google
 
 Your browser opens automatically; log in with the Google account you usually use.
 
-### If you log in with Apple
+#### If you log in with Apple
 
 ```bash
 npx -y -p mmm-mcp-server@latest mmm-login login --method apple
@@ -66,7 +126,7 @@ npx -y -p mmm-mcp-server@latest mmm-login login --method apple
 
 Your browser opens automatically; log in with your Apple ID.
 
-### If you log in with an email address and password
+#### If you log in with an email address and password
 
 ```bash
 npx -y -p mmm-mcp-server@latest mmm-login login --method email
@@ -88,17 +148,17 @@ shows your login status. To log out:
 npx -y -p mmm-mcp-server@latest mmm-login logout
 ```
 
-## 5. Register It with Your AI Agent
+### 5. Register It with Your AI Agent
 
 Below are the instructions for Claude Desktop and Claude Code, which have been tested. If you use another MCP-compatible client (e.g., Codex), in most cases you only need to register the server launch command (`npx -y mmm-mcp-server@latest`) in that client's MCP server settings. See your client's documentation for the exact steps.
 
-### Claude Code
+#### Claude Code
 
 ```bash
 claude mcp add mmm -- npx -y mmm-mcp-server@latest
 ```
 
-### Claude Desktop
+#### Claude Desktop
 
 Open the Claude Desktop configuration file (`claude_desktop_config.json`) and add the following under `mcpServers`:
 
@@ -115,7 +175,7 @@ Open the Claude Desktop configuration file (`claude_desktop_config.json`) and ad
 
 Save the file and restart Claude Desktop.
 
-## 6. Try It Out
+### 6. Try It Out
 
 Try talking to your AI agent like this:
 

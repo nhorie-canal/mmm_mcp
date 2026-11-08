@@ -18,42 +18,48 @@ Talk to your AI agent, and it reads and writes your nested mind maps and TODOs i
 
 ## Get started
 
-You need a Matryoshka account linked to Google, Apple, or an email address (anonymous-only accounts cannot be used).
+You need a Matryoshka account linked to Google, Apple, or an email address (anonymous-only accounts cannot be used; you can link one later from the app).
 
-### Claude Desktop (no terminal needed)
+### Claude (web, desktop, mobile) — nothing to install
 
-1. Download **[mmm-mcp-server.mcpb](https://github.com/nhorie-canal/mmm_mcp/releases/latest/download/mmm-mcp-server.mcpb)** and double-click it, then click **Install** in Claude Desktop.
-2. Say "Sign in to Matryoshka". A browser window opens: approve with Google or Apple, or enter your email and password on the sign-in page (it runs only on your computer; your password is never shared with the AI).
+1. In Claude, open **Settings → Customize → Connectors**, then choose **+ Add → Add custom connector**. Enter `mmm` as the name and paste this URL:
+   ```
+   https://mmm.spheres.jp/mcp
+   ```
+2. Press **Connect**. A browser window opens: sign in with the same account as the app and allow access.
 3. Talk to it:
-   - "Show me my Matryoshka maps."
+   - "Show me my mmm maps."
    - "Add a task called [task] to the [map name] map."
    - "Import these notes into the [map name] map."
 
-The first time a map's contents are read, Claude asks for your permission.
+Claude asks you for permission the first time it reads a map's contents. The connection also appears in the Claude mobile app. Claude's Free plan allows one custom connector.
+
+The same URL and steps are shown in the app under My Page → "Connect to AI".
 
 ### Claude Code and other MCP clients
 
-Requires Node.js 18+. New to the terminal? Follow the [step-by-step setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md).
-
-Claude Code:
+Register the URL. Claude Code:
 
 ```bash
-claude mcp add mmm -- npx -y mmm-mcp-server@latest
+claude mcp add --transport http mmm https://mmm.spheres.jp/mcp
 ```
 
-Other MCP clients: register `npx -y mmm-mcp-server@latest` as the server command.
+Then open `/mcp` inside Claude Code, choose mmm, and sign in in the browser. For other clients, register the URL above as a Streamable HTTP MCP server (it needs OAuth support; clients other than Claude have not been tested).
 
-Then ask the agent to sign in to Matryoshka, or sign in from the terminal with the method you use in the app (`google`, `apple`, or `email`):
+### Using the old local version (npx / .mcpb)?
 
-```bash
-npx -y -p mmm-mcp-server@latest mmm-login login --method google
-```
+The local version is being phased out. Please move to the remote version; the steps to switch, and the old local steps, are in the [setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md).
 
 ## Privacy
 
-- Runs only on your computer, only while you talk to your agent. No always-on server.
-- Your login is stored only on your computer, and your maps are read and written directly in your own account. The developer never views the contents of your maps.
-- To understand usage, on days the server writes to your maps it records only the date and a count of days in your account (never titles or contents).
+- This is an MCP server operated by us (Google Cloud Run, Tokyo). A connection is made only when you add it in your AI app, sign in in the browser with the same account as the app, and press "Allow" (anonymous accounts cannot connect).
+- It reads and writes your maps (Firebase) as you, only when your AI asks it to, under the same access control as the app.
+- Map contents are not stored on the server or written to logs. The developer does not see them.
+- The server stores only two things: the record of your connection grant (tokens are stored as hashes) and the daily call count (deleted after 3 days).
+- The record of the days you wrote (only the last date and the number of days) and your device's time zone are stored in an area of your account that only you can read. The former is used by the developer only to count users.
+- You can disconnect from your AI app's settings. Deleting your account also deletes the grant record and call counts.
+- Content passed to the AI is subject to the terms of its provider (such as Anthropic, PBC).
+- For details, see "Privacy" in the [app's page](https://info.spheres.jp/en/apps/matryoshka-mind-map/#privacy).
 
 ## More
 

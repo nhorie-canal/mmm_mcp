@@ -1,10 +1,70 @@
-# 詳しいセットアップ手順
+# セットアップ
 
 [README に戻る](https://github.com/nhorie-canal/mmm_mcp/blob/main/README.ja.md)
 
+## リモート版（推奨・インストール不要）
+
+URL を AI に登録して、ブラウザでサインインするだけです。ターミナルも Node.js も要りません。
+
+### 事前に必要なもの
+
+- Matryoshka Mind Map のアカウント。**匿名のままのアカウントは使えません。** Google・Apple・メールアドレスのいずれかを連携してください（アプリのマイページ →「アカウントを連携する」）
+- リモートの MCP コネクタに対応した AI（Claude の Web・Desktop・スマホ・Claude Code で動作を確かめます。Claude の Free プランはカスタムコネクタを1つまで）
+
+### Claude（Web・Desktop・スマホ）
+
+1. Claude を開き、「設定 → カスタマイズ」の「コネクタ」を選ぶ
+2. 「＋追加」→「カスタムコネクタを追加」を左クリックする
+3. 名前に `mmm`、URL に次を貼って「追加」を押す
+
+   ```
+   https://mmm.spheres.jp/mcp
+   ```
+
+4. 追加された mmm の「連携」を押す
+5. ブラウザが開くので、アプリと同じアカウント（Google・Apple・メール）でサインインし、「許可する」を押す
+6. Claude に戻ると接続済みです。スマホの Claude にも同じ接続が出ます
+
+アプリのマイページの「AI と連携」に、同じ URL（コピーのボタン付き）と手順があります。
+
+### Claude Code
+
+```bash
+claude mcp add --transport http mmm https://mmm.spheres.jp/mcp
+```
+
+Claude Code の中で `/mcp` を開き、mmm を選んでブラウザでサインインします。
+
+### 使ってみる
+
+- 「mmm のマップ一覧を見せて」
+- 「〇〇マップに、××というタスクを追加して」
+- 「〇〇マップの、△△っていうタスク終わったよ」
+- 「このメモを Markdown で貼るので〇〇マップに取り込んで」
+
+マップの中身（要素の文字列）を初めて読むときだけ、AI は本人の許可を求めます。同じマップは、しばらく（最大24時間）覚えています。実際に確認したかどうかをサーバー側で検証する手段は無いベストエフォートで、使っている AI が指示どおり確認するかは、その AI 次第です。
+
+### 無料プランの上限と呼び出し回数
+
+アプリと同じ上限が AI からの書き込みにも効きます（無料はマップ20個・1マップの要素300個・1マップの文書3個まで。有料プランは上限なし）。上限に達すると、AI は何も書かず、理由と続け方を教えてくれます。有料プランにするには、アプリのマイページから申し込みます（1か月無料）。有料プランにしたアカウントと同じアカウントで AI を接続してください。別のアカウントでつなぐと、無料として扱われます。
+
+また、乱用への備えとして、1人1日1,000回までツールを呼べます（日本時間の朝9時にリセット）。
+
+### 接続を外す
+
+Claude の「設定 → カスタマイズ」の「コネクタ」で mmm を削除します。アプリでアカウントを削除すると、すべての接続の許可が消えます。
+
+---
+
+## 旧ローカル版（npx・.mcpb）
+
+> **ローカル版は終了に向かっています。** 新しい機能は足さず、そのうち停止します。上のリモート版に移ってください。
+> 移るには、AI の設定からローカル版の mmm を削除し、上の手順でリモート版を追加します（アカウントのデータはそのまま使えます）。
+> 以下は、移るまでの間のローカル版の手順です。
+
 ターミナル（コマンドを打つ画面）の開き方から順に説明します。macOS・Windowsの両方で動くはずですが、実機での動作確認はmacOSでのみ行っています。
 
-## 1. 事前に必要なもの
+### 1. 事前に必要なもの
 
 - Matryoshka Mind Mapのアカウント（**匿名利用のみのアカウントは使えません。**
   Google・Apple・メールアドレスのいずれかでログインできる状態にしてください。
@@ -13,15 +73,15 @@
   他のMCP対応クライアントでも基本的に使えるはずです）
 - Node.js（プログラムを動かすための土台。次の手順でインストールします）
 
-## 2. ターミナルを開く
+### 2. ターミナルを開く
 
-### macOSの場合
+#### macOSの場合
 
 1. キーボードで `command`キーを押しながら`スペース`キーを押す（Spotlight検索が開く）
 2. 「ターミナル」と入力する
 3. 一覧に出てきた「ターミナル」を左クリック、またはEnterキーを押す
 
-### Windowsの場合
+#### Windowsの場合
 
 1. キーボードで `Windows`キーを押す（スタートメニューの検索が開く）
 2. 「PowerShell」と入力する
@@ -31,7 +91,7 @@
 ウィンドウに1行ずつコマンドを貼り付けてEnterキーを押していきます（コマンド
 自体はmacOS・Windowsで共通です）。
 
-## 3. Node.jsをインストールする
+### 3. Node.jsをインストールする
 
 すでにインストール済みか、次のコマンドで確認できます。
 
@@ -59,13 +119,13 @@ https://nodejs.org/
 node --version
 ```
 
-## 4. ログインする
+### 4. ログインする
 
 Matryoshka Mind Mapアプリで普段どのログイン方法を使っているかに合わせて、
 次の3つから選んでください。**いずれの方法も、あなた自身が事前に何かを準備する
 必要はありません。** 初回はツールのダウンロードが入るので、少し時間がかかります。
 
-### Googleでログインしている場合
+#### Googleでログインしている場合
 
 ```bash
 npx -y -p mmm-mcp-server@latest mmm-login login --method google
@@ -73,7 +133,7 @@ npx -y -p mmm-mcp-server@latest mmm-login login --method google
 
 ブラウザが自動で開くので、いつも使っているGoogleアカウントでログインします。
 
-### Appleでログインしている場合
+#### Appleでログインしている場合
 
 ```bash
 npx -y -p mmm-mcp-server@latest mmm-login login --method apple
@@ -81,7 +141,7 @@ npx -y -p mmm-mcp-server@latest mmm-login login --method apple
 
 こちらもブラウザが自動で開くので、Apple IDでログインします。
 
-### メールアドレスとパスワードでログインしている場合
+#### メールアドレスとパスワードでログインしている場合
 
 ```bash
 npx -y -p mmm-mcp-server@latest mmm-login login --method email
@@ -110,7 +170,7 @@ npx -y -p mmm-mcp-server@latest mmm-login status
 npx -y -p mmm-mcp-server@latest mmm-login logout
 ```
 
-## 5. AIエージェントにMatryoshkaを教える
+### 5. AIエージェントにMatryoshkaを教える
 
 ここでは動作確認済みのClaude Desktop / Claude Codeへの登録方法を示します。
 他のMCP対応クライアント（例: Codexなど）を使っている場合も、多くは同じように
@@ -118,13 +178,13 @@ npx -y -p mmm-mcp-server@latest mmm-login logout
 MCPサーバー設定に登録するだけで使えるはずです。具体的な登録方法はお使いの
 クライアントのドキュメントを確認してください。
 
-### Claude Codeを使っている場合
+#### Claude Codeを使っている場合
 
 ```bash
 claude mcp add mmm -- npx -y mmm-mcp-server@latest
 ```
 
-### Claude Desktopを使っている場合
+#### Claude Desktopを使っている場合
 
 Claude Desktopの設定ファイル（`claude_desktop_config.json`）を開き、
 `mcpServers`の中に次を追記します。
@@ -142,7 +202,7 @@ Claude Desktopの設定ファイル（`claude_desktop_config.json`）を開き�
 
 保存したらClaude Desktopを再起動してください。
 
-## 6. 使ってみる
+### 6. 使ってみる
 
 AIエージェントとの会話で、次のように話しかけてみてください。
 

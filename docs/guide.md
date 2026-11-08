@@ -72,7 +72,9 @@ The reasons:
 - Creating Markdown documents requires MCP server 0.4.0 or later and app 5.3.0 or later (rewriting them with `update_document` requires 0.5.0 or later).
 - On the free plan, each map can hold up to 3 documents.
 
-## Updating to the Latest Version
+## Updating the Local Version
+
+The remote version (the one you use by registering a URL) is updated on the server, so there is nothing to do. The rest of this section is for the local version (`.mcpb` or `npx`); the local version is being phased out, so we recommend moving to the [remote version](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md).
 
 ### Claude Desktop extension (.mcpb)
 
@@ -118,6 +120,10 @@ Change `"args"` in `claude_desktop_config.json` to `["-y", "mmm-mcp-server@lates
 | "Wrong password" when logging in | See the note in Step 4 of the [setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md). Try logging in with Google or Apple instead. |
 | The agent does not operate on your maps when asked | Check that the registration in Step 5 of the [setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md) is correct. Claude Desktop needs a restart after registration. |
 | The agent will not show map contents / stops at the confirmation | Check that you answered "yes" when asked for permission to read. |
+| "Free plan limit" blocks a write (remote version) | Free: 20 maps, 300 elements per map, 3 documents per map. Split into another map, or upgrade from My Page in the app (first month free). If it blocks you although you subscribed, check that you connected with the same account shown in My Page |
+| "Daily call limit" (remote version) | Up to 1,000 calls per person per day; resets at 00:00 UTC |
+| Sign-in is refused when connecting (remote version) | Anonymous-only accounts cannot connect. Link email, Google, or Apple from My Page in the app, then connect again |
+| Cannot add the connector in Claude (remote version) | Claude's Free plan allows one custom connector. Remove one you do not use |
 | The AI cannot load a large map | With several hundred elements or more, the `list_elements` response gets large and may not fit in one go. Some AI agents handle this by saving it to a file and reading only the parts they need. If it happens often, split the map (swiping left on a top-level element turns it and everything under it into a separate map). |
 
 ## Advanced Example: Recording Tasks per Folder Automatically
@@ -168,6 +174,13 @@ integration) and manage them in real time.
 - Skipping confirmation for `create_map` applies only when you spell out this workflow in your own CLAUDE.md. Without any setup, the agent confirms in the conversation before creating a map, as usual.
 
 ## About This Tool
+
+### Remote version
+
+- It reads and writes your maps in Firestore as you, only when your AI asks it to. It does not store map contents or write them to logs.
+- Access grants (access tokens) are stored only as hashes and are deleted when you delete your account.
+
+### Local version (old)
 
 - Your login credentials (refresh token) are stored only on your computer (macOS: `~/.config/mmm-mcp/credentials.json`, Windows: `C:\Users\<username>\.config\mmm-mcp\credentials.json`) and are never sent anywhere else.
 - Your map contents are read from and written to your Firebase account directly, without going through any third-party server, including the developer's (only when logging in with Apple, the last step of login goes through a signing-only relay server, but your map contents never pass through it).
