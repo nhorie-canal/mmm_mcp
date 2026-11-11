@@ -1,22 +1,35 @@
-# Tips and Advanced Use
+# User guide
 
-[Back to README](https://github.com/nhorie-canal/mmm_mcp/blob/main/README.md)
+[Back to README](https://github.com/nhorie-canal/mmm_mcp/blob/main/README.md) · [Setup](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md)
 
-## Keeping Your Maps Tidy
+| Section | When |
+|---|---|
+| [1. Recommended instructions](#1-recommended-instructions) | Paste these first. Your maps stay readable and the AI shows diagrams |
+| [2. Managing development work](#2-managing-development-work) | Keep the tasks and notes of AI-assisted development in mmm |
+| [3. Troubleshooting](#3-troubleshooting) | Something does not work |
 
-Letting an AI agent write your maps is convenient, but left alone the maps tend to become hard to read. Paste the following into the instructions your AI agent loads every time (for Claude Code, `~/.claude/CLAUDE.md`; for Claude on the web, desktop and mobile, **Settings → Profile → personal preferences**) to keep the writing style consistent and to get diagrams instead of long text:
+## 1. Recommended instructions
+
+Paste the following into the instructions your AI loads every time.
+
+```mermaid
+flowchart LR
+  A{Your AI} -- Claude Code --> B["~/.claude/CLAUDE.md<br/>(or CLAUDE.md in a project<br/>for that project only)"]
+  A -- "Claude web, desktop, mobile" --> C["Settings → Profile →<br/>personal preferences<br/>(or a project's instructions)"]
+  A -- Other AI --> D[Its always-loaded instructions]
+```
 
 ```markdown
 ## How to write in mmm
 
-- Keep each element short enough to read in one line. Do not pack in explanations.
-  If you want to keep reasons or notes, put them one level down as child elements.
-- Put a URL in its own element. Do not mix it with text like "Docs here: https://...".
-  Create an element named "Docs" and put only the URL as its child.
-- Order reminder items by when to do them. If an item has a date, do not write it
-  in the text; set it as a due date or start date with `set_schedule`. Only triggers
-  without a date ("Right after release", "When X happens") become the name of a
-  parent element, with the items under it.
+- Keep each element short enough to read in one line. Put reasons and notes one level
+  down as child elements.
+- Put a URL in its own element. Do not mix it with text; put only the URL under an
+  element such as "Docs".
+- Order reminder items by when to do them. If an item has a date, do not write it in
+  the text; set it as a due date or start date with `set_schedule`. Only triggers
+  without a date ("Right after release", "When X happens") become the name of a parent
+  element, with the items under it.
 
 ## Show it as a diagram
 
@@ -29,122 +42,73 @@ Letting an AI agent write your maps is convenient, but left alone the maps tend 
   (`create_document`) with a Mermaid diagram alongside the elements.
 ```
 
-The reasons:
-
-- **One line per element**: Matryoshka shows elements nested inside each other, so long elements hurt readability and lose the benefit of drilling down through the hierarchy.
-- **Do not mix URLs with text**: A URL in the same element as other text is not treated as a link in the app, so tapping it does nothing.
-- **Order by when to do them**: Compared with ordering by task name, checking items off in order makes it easier to notice anything you missed.
-- **Dates as due/start dates**: A date in the text stays plain text. As a due or start date, the app highlights overdue items in red and today's in orange, and sends a notification as the due date approaches. Triggers without a date cannot be a date, so they become the name of a parent element.
-- **Show it as a diagram**: You can see the flow or structure at a glance without rereading long text. A diagram in a Markdown document is drawn as a diagram in the app, and the AI can read it back and update it later.
-
-## Managing Development Work
-
-An example instruction for keeping the tasks and notes of AI-assisted development in Matryoshka. Paste it, together with "Keeping Your Maps Tidy" above, into the instructions your AI agent loads every time:
-
-| Client | Where to paste |
+| Rule | Why |
 |---|---|
-| Claude Code | `CLAUDE.md` at the project root, or `~/.claude/CLAUDE.md` |
-| Claude Desktop / claude.ai | Settings → Profile → personal preferences (applies to all chats), or a project's instructions (that project only) |
+| One line per element | Elements are shown nested, so long ones hurt readability |
+| Keep URLs separate | A URL mixed with text is not a link in the app |
+| Order by when to do them | Checking items off in order makes gaps easy to spot |
+| Dates as due/start dates | The app highlights overdue items in red and today's in orange, and notifies you as the due date approaches. A date in the text stays plain text |
+| Show it as a diagram | You understand it without rereading long text. Diagrams in documents are drawn in the app, and the AI can read and update them later |
+
+Showing Markdown documents requires app 5.3.0 or later. The free plan allows 3 documents per map.
+
+## 2. Managing development work
+
+Keep one map per working folder and let the AI record the tasks and notes that come up. Paste this in addition to section 1.
+
+```mermaid
+flowchart TD
+  F[Working folder] -- same name --> M[To-do map]
+  M --> V1[Release or milestone<br/>e.g. 1.2.0]
+  M --> H[On hold]
+  V1 --> T1[Task, one line]
+  V1 --> T2[Task, one line]
+  T1 --> R[Reason, steps]
+  T1 --> D[Notes<br/>docs URL or a Markdown document]
+```
 
 ````markdown
 ## Task management (mmm)
 
-Record the tasks and notes that come up in this working folder with the Matryoshka Mind Map (mmm) MCP server.
+Record the tasks and notes that come up in this working folder in the Matryoshka Mind Map (mmm) MCP.
 
-- **Keep "things to do later" only in mmm.** Do not leave them in plan checkboxes, this file,
-  or only in the conversation. Tasks that come out of a design doc, and remaining work or
-  unverified points you mention in a report, go into mmm as items right away.
-- Use the working folder's name as the map title. Look for a map with that name with
-  `list_maps`; if there is none, you may create one with `create_map` (as a TODO map).
-- Make each task a one-line element. Put reasons, steps, and paths of related docs as child elements.
-- Create a parent element per version or milestone and list its tasks under it
-  (for example, the tasks shipping in 1.2.0 go under "1.2.0").
-- **Check off a task as soon as it is done**, so that unchecked always means work that is really left.
-  "Lower priority" or "on hold" is not done: do not check it; move it under an "On hold" parent.
-- Do not write due or start dates in the text; set them with `set_schedule`.
-- **Keep notes such as research, comparisons, and design memos in Markdown, and draw diagrams
-  in ```mermaid blocks.** If there is a GitHub repository, put them in `docs/` and add the file's
-  URL as its own element under the related item (GitHub renders Mermaid too). Otherwise, create
-  a Markdown document (`create_document`) under the related item. To revise one, read it with
-  `read_document`, then overwrite it with `update_document` passing the returned `updateTime` as `baseUpdateTime` (do not recreate it and delete the old one).
-- When asked about progress, do not answer from memory: re-read with `list_elements` first
-  (items checked directly in the app are not visible until you re-read).
-- Before moving, closing, or deleting items, re-read their current state. Never uncheck items a person has checked.
+- **Keep "things to do later" only in mmm.** Not in plan checkboxes, this file, or only in
+  the conversation. Tasks from design docs and open items you mention in reports go into
+  mmm right away.
+- Use the working folder's name as the map title. Look for it with `list_maps`; if it does
+  not exist, create it with `create_map` (to-do map) without asking.
+- Create a parent element per release or milestone and put its tasks under it.
+- **Check off finished tasks right away.** "Lower priority" or "on hold" is not done; move
+  such tasks under an "On hold" parent without checking them.
+- Keep research, comparisons and design notes in Markdown. With a GitHub repository, put
+  them in `docs/` and add the file's URL under the related element; otherwise create a
+  Markdown document (`create_document`). To edit, read it with `read_document`, pass the
+  returned `updateTime` as `baseUpdateTime`, and overwrite it with `update_document`.
+- When asked about progress, reread with `list_elements` instead of answering from memory.
+- Before moving, closing or deleting items, reread the current state. Never uncheck items a
+  person checked.
 ````
-
-The reasons:
 
 | Rule | Why |
 |---|---|
-| Keep "things to do later" only in mmm | When tasks are scattered, both the next AI session and you miss what is left |
-| List tasks under a parent per version | Drilling down shows what is left for each version at a glance |
-| Check off right away | The number of unchecked items is exactly the remaining work |
-| Make notes reachable from the task | The task and its rationale sit together. Notes in a repository keep a single source and always show the latest version. They survive closing the chat |
-| Draw diagrams in Mermaid | Both the app and GitHub render them as diagrams, and an AI reading them later still understands the content |
-| Re-read when asked | The MCP server does not learn about changes made in the app on its own |
+| Keep "later" items only in mmm | Scattered places make the next session's AI and you miss leftovers |
+| Create the map from the folder name | Saying "without asking" lets the AI create it itself (otherwise it asks first) |
+| Group under releases | Drilling down shows what is left per release at a glance |
+| Check off right away | The number of unchecked items is exactly what is left |
+| Link notes from tasks | Work and its reasons sit together and survive closing the chat |
+| Reread when asked | The MCP does not learn about changes made in the app |
 
-- Showing Markdown documents requires app 5.3.0 or later
-- On the free plan, each map can hold up to 3 documents.
+- To use it in every folder in Claude Code, register it with `--scope user` ([setup](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md)).
+- A map is created per folder. To keep them apart from your usual maps, use a separate account or limit the folders.
+- The permission check the first time a map is read cannot be skipped, even with this setup (the server requires it to protect private content).
 
-## Troubleshooting
+## 3. Troubleshooting
 
-| Symptom | Cause / Solution |
+| Symptom | What to do |
 |---|---|
-| The agent will not show map contents / stops at the confirmation | Check that you answered "yes" when asked for permission to read. |
-| "Free plan limit" blocks a write | Free: 20 maps, 300 elements per map, 3 documents per map. Split into another map, or upgrade from My Page in the app (first month free). If it blocks you although you subscribed, check that you connected with the same account shown in My Page |
-| "Daily call limit" | Up to 1,000 calls per person per day; resets at 00:00 UTC |
-| Sign-in is refused when connecting | Anonymous-only accounts cannot connect. Link email, Google, or Apple from My Page in the app, then connect again |
+| The AI will not show map contents / stops at the confirmation | Answer "yes" when asked for permission to read |
+| "Free plan limit" blocks a write | Split into another map, or upgrade from My Page in the app (first month free). If it still blocks you, check that you connected with the same account |
+| "Daily call limit" | 1,000 calls per person per day; resets at 00:00 UTC |
+| Sign-in is refused when connecting | Anonymous-only accounts cannot connect. Link email, Google or Apple from My Page in the app |
 | Cannot add the connector in Claude | Claude's Free plan allows one custom connector. Remove one you do not use |
-| The AI cannot load a large map | With several hundred elements or more, the `list_elements` response gets large and may not fit in one go. Some AI agents handle this by saving it to a file and reading only the parts they need. If it happens often, split the map (swiping left on a top-level element turns it and everything under it into a separate map). |
-
-## Advanced Example: Recording Tasks per Folder Automatically
-
-What follows is **just one example of how it can be used**. It is not a standard workflow recommended for everyone, but shows what becomes possible with this kind of setup. Feel free to ignore it if it does not suit you.
-
-**Goal**: Pair each folder (project) you work on in Claude Code with a map of the same name, and have the AI agent record and update tasks that come up during work in that map in real time, without asking.
-
-> Setting (2) below uses Claude Code's "global CLAUDE.md", an instruction file that is always loaded. If your AI agent has a similar feature for instructions loaded every time, the same idea should apply.
-
-### Setup
-
-**(1) Register the mmm server so it is available in every folder**
-
-When registering with Claude Code, the `mmm` tool is only available in the current folder by default. To use it no matter which folder you start `claude` in, register it with `--scope user`:
-
-```bash
-claude mcp add --transport http --scope user mmm https://mmm.spheres.jp/mcp
-```
-
-**(2) Write the workflow rules in your global CLAUDE.md (`~/.claude/CLAUDE.md`)**
-
-For example, add something like this:
-
-```markdown
-## Task management with mmm
-
-Record tasks that come up in the working folder in mmm (the Matryoshka Mind Map
-integration) and manage them in real time.
-
-- Use the working folder name as the map title.
-- Check with list_maps whether a map with the same name exists. If not, create it
-  right away with create_map(title=folder name, isTodo=true) without confirming
-  the title (confirmation is not required for this workflow only).
-- Calling list_elements to see existing tasks asks for confirmation only the first
-  time the map is read in that process. After that, add and update tasks in real
-  time with auto_structure_thought / update_task_status.
-```
-
-### Why this works
-
-- `create_map` takes the title directly as an argument; "confirm in the conversation before calling" is only a recommended behavior for AI agents written in the tool description. A more specific instruction in CLAUDE.md takes priority, so maps can be created automatically without confirmation.
-- Only `list_elements` and `read_document`, which read map contents, have confirmation enforced on the server side out of consideration for confidential information (see "Try It Out" in the [setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md)). This does not change with the per-folder workflow: confirmation happens once, the first time a map is read in that process.
-
-### Caveats
-
-- Maps are created automatically for every folder, so work-log style maps will mix in with your carefully curated mind maps. Some people may find this cluttered. Adjust it to suit you, for example by using a separate account or limiting it to certain folders.
-- Skipping confirmation for `create_map` applies only when you spell out this workflow in your own CLAUDE.md. Without any setup, the agent confirms in the conversation before creating a map, as usual.
-
-## About This Tool
-
-- It reads and writes your maps in Firestore as you, only when your AI asks it to. It does not store map contents or write them to logs.
-- Access grants (access tokens) are stored only as hashes and are deleted when you delete your account.
+| The AI cannot load a large map | With several hundred elements, the response may not fit at once. Split the map (long-press a top-level element and drop it on the header at the top of the screen to make it a separate map) |

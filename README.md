@@ -2,66 +2,55 @@
 
 English | [日本語](https://github.com/nhorie-canal/mmm_mcp/blob/main/README.ja.md)
 
-**Work with your AI in maps, not text.** Instead of scrolling back through a long chat, your AI agent (such as Claude) writes nested to-dos and Mermaid diagrams into [Matryoshka Mind Map](https://matryoshkamap.web.app). You see them at a glance in the app, edit, and check them off, and your AI reads your changes back.
+**Work with your AI in maps, not text.** Your usual AI, such as Claude, writes nested to-dos and Mermaid diagrams into [Matryoshka Mind Map](https://matryoshkamap.web.app). You look, edit and check things off in the app, and the AI reads your changes back.
+
+> **To get the most out of it → [User guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.md)**
+> Recommended instructions to paste into your AI (consistent writing, diagrams first, due dates) and troubleshooting.
 
 ![Asking an AI agent to plan a trip fills a Matryoshka map, and "I booked the hotel" checks it off](https://raw.githubusercontent.com/nhorie-canal/mmm_mcp/main/docs/demo.gif)
 
-**Get the app (free to start)**: [Web app](https://matryoshkamap.web.app) · [App Store](https://apps.apple.com/app/id1613648306) · [Google Play](https://play.google.com/store/apps/details?id=jp.spheres.mm)
+**The app (free to start)**: [Web](https://matryoshkamap.web.app) · [App Store](https://apps.apple.com/app/id1613648306) · [Google Play](https://play.google.com/store/apps/details?id=jp.spheres.mm)
 
-## What you can do
+## How it works
 
-- "Show me my maps" — lists your maps
-- Turn ideas from the conversation into a nested mind map
-- "I finished task X" — checks it off your TODO list
-- Paste long notes or Markdown and import them into a map
-- Save notes from the conversation as a Markdown document inside a map, then read it back or rewrite it later
+```mermaid
+sequenceDiagram
+  actor You
+  participant AI as Your AI
+  participant M as Your mmm map
+  You->>AI: "Turn today's meeting into a to-do list"
+  AI->>M: Writes nested to-dos and diagrams
+  You->>M: View, edit, check off in the app
+  You->>AI: "What's left?"
+  AI->>M: Reads the map again
+  AI-->>You: Answers from the map
+```
 
 ## Get started
 
-You need a Matryoshka account linked to Google, Apple, or an email address (anonymous-only accounts cannot be used; you can link one later from the app).
+Your account must be linked to Google, Apple or email (anonymous-only accounts cannot connect).
 
-### Claude (web, desktop, mobile) — nothing to install
-
-1. In Claude, open **Settings → Customize → Connectors**, then choose **+ Add → Add custom connector**. Enter `mmm` as the name and paste this URL:
+1. Add this URL to your AI's connector (MCP) settings
    ```
    https://mmm.spheres.jp/mcp
    ```
-2. Leave Authentication ("Sign in now") and OAuth client ("Register automatically") as detected, and press **Add**.
-3. A browser window opens: sign in with the same account as the app. Back in Claude, confirm to finish connecting.
-4. Talk to it:
-   - "Show me my mmm maps."
-   - "Add a task called [task] to the [map name] map."
-   - "Import these notes into the [map name] map."
+2. When the browser opens, sign in with the same account as the app
+3. Ask in chat: "Show me my mmm maps"
 
-Claude asks you for permission the first time it reads a map's contents. The connection also appears in the Claude mobile app. Claude's Free plan allows one custom connector.
-
-The same URL and steps are shown in the app under My Page → "Connect to AI".
-
-### Claude Code and other MCP clients
-
-Register the URL. Claude Code:
+In Claude Code, register it with this line, then open `/mcp`, choose mmm and sign in:
 
 ```bash
 claude mcp add --transport http mmm https://mmm.spheres.jp/mcp
 ```
 
-Then open `/mcp` inside Claude Code, choose mmm, and sign in in the browser. For other clients, register the URL above as a Streamable HTTP MCP server (it needs OAuth support; clients other than Claude have not been tested).
-
-### Using the old local version (npx / .mcpb)?
-
-The local version has been stopped. Remove the local mmm from your AI app's settings and add the remote version with the steps above. Your account data stays the same.
+Screen-by-screen steps, free-plan limits and how to disconnect are in the [setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md). The old local version (npx / .mcpb) has been stopped; remove it from your AI's settings and add the URL above instead.
 
 ## Privacy
 
-- This is an MCP server operated by us (Google Cloud Run, Tokyo). A connection is made only when you add it in your AI app, sign in in the browser with the same account as the app, and press "Allow" (anonymous accounts cannot connect).
-- It reads and writes your maps (Firebase) as you, only when your AI asks it to, under the same access control as the app.
-- Map contents are not stored on the server or written to logs. The developer does not see them.
-- The server stores only two things: the record of your connection grant (tokens are stored as hashes) and the daily call count (deleted after 3 days).
-- The record of the days you wrote (only the last date and the number of days) and your device's time zone are stored in an area of your account that only you can read. The former is used by the developer only to count users.
-- You can disconnect from your AI app's settings. Deleting your account also deletes the grant record and call counts.
-- Content passed to the AI is subject to the terms of its provider (such as Anthropic, PBC).
-- For details, see "Privacy" in the [app's page](https://info.spheres.jp/en/apps/matryoshka-mind-map/#privacy).
+- It reads and writes your maps as you, only when your AI asks. The same access control as the app applies
+- Map contents are not stored on the server or written to logs. The server keeps only connection grants (hashed) and daily call counts (deleted after 3 days)
+- The days you wrote (dates and a count only) and your device's time zone are kept in a part of your account only you can read. The former is used only to count users
+- The first time a map's contents are read, the AI asks for your permission
+- You can disconnect from your AI's settings. Deleting your account removes the grants. Content passed to your AI is subject to its provider's terms
 
-## More
-
-[Tips and advanced use](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.md) — keeping maps tidy, recording tasks per folder, updating, troubleshooting.
+See [Privacy](https://info.spheres.jp/en/apps/matryoshka-mind-map/#privacy) for details.
