@@ -4,10 +4,6 @@
 
 **AIとのやりとりを、文字から図へ。** Claude などのいつもの AI が、[マトリョシカ マインドマップ](https://matryoshkamap.web.app)に入れ子の TODO や Mermaid の図を書き込みます。あなたはアプリで見て、直して、チェック。その結果を AI も読み返します。
 
-> **使いこなすには → [使い方ガイド](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.ja.md)**
->
-> AI に貼る推奨の指示文（書き方をそろえる・図で見せる・期日を付ける）と、よくあるトラブルをまとめています。
-
 ![AIエージェントに旅行の計画を頼むとマップが埋まり、「ホテルを予約した」でチェックが付く](https://raw.githubusercontent.com/nhorie-canal/mmm_mcp/main/docs/demo.gif)
 
 **アプリ本体（基本無料）**: [Web版](https://matryoshkamap.web.app)・[App Store](https://apps.apple.com/app/id1613648306)・[Google Play](https://play.google.com/store/apps/details?id=jp.spheres.mm)
@@ -46,6 +42,10 @@ claude mcp add --transport http mmm https://mmm.spheres.jp/mcp
 ```
 
 画面ごとの詳しい手順・無料プランの上限・接続の外し方は[セットアップ](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.ja.md)にあります。旧ローカル版（npx・.mcpb）は停止しました。AI の設定から削除し、上の手順で追加し直してください。
+
+> ### つないだら、次はこれ → [使い方ガイド](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.ja.md)
+>
+> AI に推奨の指示文を貼ると、書き方がそろい、図で見せてくれて、日付は期日として付くようになります。よくあるトラブルもここにあります。
 
 ## プライバシー
 

@@ -1,6 +1,6 @@
 # Setup
 
-[Back to README](https://github.com/nhorie-canal/mmm_mcp/blob/main/README.md) · **[User guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.md)**
+[Back to README](https://github.com/nhorie-canal/mmm_mcp/blob/main/README.md) · [User guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.md)
 
 Register a URL with your AI and sign in in the browser. Nothing to install.
 
@@ -43,6 +43,10 @@ Inside Claude Code, open `/mcp`, choose mmm and sign in in the browser. To use i
 ## Other AI clients
 
 Register the URL above as a Streamable HTTP MCP server (it needs OAuth support; clients other than Claude have not been tested).
+
+> ### Connected? Next → [User guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.md)
+>
+> Paste the recommended instructions into your AI to get consistent maps, diagrams first, and real due dates.
 
 ## Limits
 
