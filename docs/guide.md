@@ -2,6 +2,56 @@
 
 [Back to README](https://github.com/nhorie-canal/mmm_mcp/blob/main/README.md) · [Setup](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md)
 
+## The whole flow
+
+```mermaid
+flowchart TD
+  subgraph S1["1. Prepare"]
+    A[Get the app<br/>web, iPhone, Android] --> B[Link your account to<br/>Google, Apple or email]
+  end
+  subgraph S2["2. Connect (once)"]
+    C[In claude.ai, Settings → Customize → Connectors,<br/>add https://mmm.spheres.jp/mcp] --> D[Sign in in the browser with<br/>the same account as the app]
+    D --> E[mmm works in Claude web, desktop,<br/>mobile and Claude Code]
+  end
+  subgraph S3["3. Paste the instructions (once)"]
+    F[Copy the instructions in<br/>sections 1 and 2 of this guide] --> G[Claude Code:<br/>~/.claude/CLAUDE.md]
+    F --> H[Claude app:<br/>Settings → Profile → personal preferences]
+  end
+  subgraph S4["4. Every day"]
+    I[Start Claude Code<br/>in a working folder] --> J[Claude records tasks, diagrams<br/>and due dates in the folder's map]
+    J --> K[View, edit and check off<br/>in the app on your phone]
+    K --> L[Claude reads the map back<br/>and moves on]
+    L --> J
+  end
+  B --> C
+  E --> F
+  G --> I
+  H --> I
+```
+
+mmm shows up in Claude Code when it is signed in with the same account as claude.ai. Otherwise, register it with `claude mcp add --transport http --scope user mmm https://mmm.spheres.jp/mcp`. A map is created per working folder, so mind the free-plan limit (20 maps) if you use many folders.
+
+## Get started
+
+Your account must be linked to Google, Apple or email (anonymous-only accounts cannot connect).
+
+1. Add this URL to your AI's connector (MCP) settings
+   ```
+   https://mmm.spheres.jp/mcp
+   ```
+2. When the browser opens, sign in with the same account as the app
+3. Ask in chat: "Show me my mmm maps"
+
+In Claude Code, register it with this line, then open `/mcp`, choose mmm and sign in:
+
+```bash
+claude mcp add --transport http mmm https://mmm.spheres.jp/mcp
+```
+
+Screen-by-screen steps, free-plan limits and how to disconnect are in the [setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md). The old local version (npx / .mcpb) has been stopped; remove it from your AI's settings and add the URL above instead.
+
+Sections in this guide:
+
 | Section | When |
 |---|---|
 | [1. Recommended instructions](#1-recommended-instructions) | Paste these first. Your maps stay readable and the AI shows diagrams |
@@ -55,37 +105,6 @@ Showing Markdown documents requires app 5.3.0 or later. The free plan allows 3 d
 ## 2. Managing development work
 
 Keep one map per working folder and let the AI record the tasks and notes that come up. Paste this in addition to section 1.
-
-### Getting to this setup
-
-```mermaid
-flowchart TD
-  subgraph S1["1. Prepare"]
-    A[Get the app<br/>web, iPhone, Android] --> B[Link your account to<br/>Google, Apple or email]
-  end
-  subgraph S2["2. Connect (once)"]
-    C[In claude.ai, Settings → Customize → Connectors,<br/>add https://mmm.spheres.jp/mcp] --> D[Sign in in the browser with<br/>the same account as the app]
-    D --> E[mmm works in Claude web, desktop,<br/>mobile and Claude Code]
-  end
-  subgraph S3["3. Paste the instructions (once)"]
-    F[Copy section 1 of this guide<br/>and Task management below] --> G[Claude Code:<br/>~/.claude/CLAUDE.md]
-    F --> H[Claude app:<br/>Settings → Profile → personal preferences]
-  end
-  subgraph S4["4. Every day"]
-    I[Start Claude Code<br/>in a working folder] --> J[Claude records tasks, diagrams<br/>and due dates in the folder's map]
-    J --> K[View, edit and check off<br/>in the app on your phone]
-    K --> L[Claude reads the map back<br/>and moves on]
-    L --> J
-  end
-  B --> C
-  E --> F
-  G --> I
-  H --> I
-```
-
-mmm shows up in Claude Code when it is signed in with the same account as claude.ai. Otherwise, register it with `claude mcp add --transport http --scope user mmm https://mmm.spheres.jp/mcp`. A map is created per working folder, so mind the free-plan limit (20 maps) if you use many folders.
-
-### Shape of the map
 
 ```mermaid
 flowchart TD

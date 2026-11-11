@@ -24,29 +24,10 @@ sequenceDiagram
   AI->>M: Adds the next tasks and diagrams
 ```
 
-## Get started
-
-Your account must be linked to Google, Apple or email (anonymous-only accounts cannot connect).
-
-1. Add this URL to your AI's connector (MCP) settings
-   ```
-   https://mmm.spheres.jp/mcp
-   ```
-2. When the browser opens, sign in with the same account as the app
-3. Ask in chat: "Show me my mmm maps"
-
-In Claude Code, register it with this line, then open `/mcp`, choose mmm and sign in:
-
-```bash
-claude mcp add --transport http mmm https://mmm.spheres.jp/mcp
-```
-
-Screen-by-screen steps, free-plan limits and how to disconnect are in the [setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md). The old local version (npx / .mcpb) has been stopped; remove it from your AI's settings and add the URL above instead.
-
 > [!IMPORTANT]
-> ### Connected? Next → [User guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.md)
+> ### Get started → [User guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.md)
 >
-> Paste the recommended instructions into your AI to get consistent maps, diagrams first, and real due dates. Troubleshooting is there too.
+> From preparing the app to connecting your AI, the recommended instructions and everyday use, in order.
 
 ## Privacy
 

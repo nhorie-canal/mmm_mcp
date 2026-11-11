@@ -24,29 +24,10 @@ sequenceDiagram
   AI->>M: 次の作業・図を書き足す
 ```
 
-## はじめる
-
-アカウントは Google・Apple・メールのどれかを連携してあることが必要です（匿名のままでは使えません）。
-
-1. AI のコネクタ（MCP）の設定に、次の URL を追加する
-   ```
-   https://mmm.spheres.jp/mcp
-   ```
-2. ブラウザが開いたら、アプリと同じアカウントでサインインする
-3. チャットで「mmm のマップを見せて」と頼む
-
-Claude Code は次の1行で登録し、`/mcp` から mmm を選んでサインインします。
-
-```bash
-claude mcp add --transport http mmm https://mmm.spheres.jp/mcp
-```
-
-画面ごとの詳しい手順・無料プランの上限・接続の外し方は[セットアップ](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.ja.md)にあります。旧ローカル版（npx・.mcpb）は停止しました。AI の設定から削除し、上の手順で追加し直してください。
-
 > [!IMPORTANT]
-> ### つないだら、次はこれ → [使い方ガイド](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.ja.md)
+> ### はじめ方 → [使い方ガイド](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.ja.md)
 >
-> AI に推奨の指示文を貼ると、書き方がそろい、図で見せてくれて、日付は期日として付くようになります。よくあるトラブルもここにあります。
+> アプリの準備から、AI とつなぐ手順、推奨の指示文、毎日の使い方まで、順番にまとめています。
 
 ## プライバシー
 

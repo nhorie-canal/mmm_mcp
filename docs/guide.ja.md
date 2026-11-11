@@ -2,6 +2,56 @@
 
 [README に戻る](https://github.com/nhorie-canal/mmm_mcp/blob/main/README.ja.md) ・ [セットアップ](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.ja.md)
 
+## 全体の流れ
+
+```mermaid
+flowchart TD
+  subgraph S1["1. 準備"]
+    A[アプリを入れる<br/>Web・iPhone・Android] --> B[アカウントを<br/>Google・Apple・メールに連携]
+  end
+  subgraph S2["2. つなぐ（1回だけ）"]
+    C[claude.ai の 設定 → カスタマイズ → コネクタ に<br/>https://mmm.spheres.jp/mcp を追加] --> D[ブラウザでアプリと同じ<br/>アカウントにサインイン]
+    D --> E[Web・Desktop・スマホ・Claude Code の<br/>すべてで mmm が使える]
+  end
+  subgraph S3["3. 指示を貼る（1回だけ）"]
+    F[このガイドの<br/>1 と 2 の指示文をコピー] --> G[Claude Code:<br/>~/.claude/CLAUDE.md]
+    F --> H[Claude アプリ:<br/>設定 → プロフィールの個人設定]
+  end
+  subgraph S4["4. 毎日の使い方"]
+    I[作業フォルダで<br/>Claude Code を起動] --> J[Claude がフォルダ名のマップに<br/>タスク・図・期日を記録]
+    J --> K[スマホのアプリで<br/>見る・直す・チェック]
+    K --> L[Claude がマップを読み返して<br/>次の作業へ]
+    L --> J
+  end
+  B --> C
+  E --> F
+  G --> I
+  H --> I
+```
+
+Claude Code に mmm が出るのは、claude.ai と同じアカウントでログインしているときです。そうでなければ `claude mcp add --transport http --scope user mmm https://mmm.spheres.jp/mcp` で登録します。作業フォルダごとにマップが増えるので、多くのフォルダで使うなら無料プランの上限（マップ20個）に注意してください。
+
+## はじめる
+
+アカウントは Google・Apple・メールのどれかを連携してあることが必要です（匿名のままでは使えません）。
+
+1. AI のコネクタ（MCP）の設定に、次の URL を追加する
+   ```
+   https://mmm.spheres.jp/mcp
+   ```
+2. ブラウザが開いたら、アプリと同じアカウントでサインインする
+3. チャットで「mmm のマップを見せて」と頼む
+
+Claude Code は次の1行で登録し、`/mcp` から mmm を選んでサインインします。
+
+```bash
+claude mcp add --transport http mmm https://mmm.spheres.jp/mcp
+```
+
+画面ごとの詳しい手順・無料プランの上限・接続の外し方は[セットアップ](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.ja.md)にあります。旧ローカル版（npx・.mcpb）は停止しました。AI の設定から削除し、上の手順で追加し直してください。
+
+このガイドの節は次のとおりです。
+
 | 節 | こんなときに |
 |---|---|
 | [1. 推奨の指示文](#1-推奨の指示文) | まず貼る。マップが読みやすくなり、AI が図で見せてくれる |
@@ -50,37 +100,6 @@ MD 文書の表示にはアプリ 5.3.0 以降が要ります。無料プラン�
 ## 2. 開発の作業管理に使う
 
 作業フォルダごとにマップを1つ持ち、出てきたタスクと資料を AI に記録させる使い方です。「1. 推奨の指示文」に加えて貼ります。
-
-### この使い方になるまで
-
-```mermaid
-flowchart TD
-  subgraph S1["1. 準備"]
-    A[アプリを入れる<br/>Web・iPhone・Android] --> B[アカウントを<br/>Google・Apple・メールに連携]
-  end
-  subgraph S2["2. つなぐ（1回だけ）"]
-    C[claude.ai の 設定 → カスタマイズ → コネクタ に<br/>https://mmm.spheres.jp/mcp を追加] --> D[ブラウザでアプリと同じ<br/>アカウントにサインイン]
-    D --> E[Web・Desktop・スマホ・Claude Code の<br/>すべてで mmm が使える]
-  end
-  subgraph S3["3. 指示を貼る（1回だけ）"]
-    F[このガイドの<br/>1. 推奨の指示文 と<br/>下の 作業の管理 をコピー] --> G[Claude Code:<br/>~/.claude/CLAUDE.md]
-    F --> H[Claude アプリ:<br/>設定 → プロフィールの個人設定]
-  end
-  subgraph S4["4. 毎日の使い方"]
-    I[作業フォルダで<br/>Claude Code を起動] --> J[Claude がフォルダ名のマップに<br/>タスク・図・期日を記録]
-    J --> K[スマホのアプリで<br/>見る・直す・チェック]
-    K --> L[Claude がマップを読み返して<br/>次の作業へ]
-    L --> J
-  end
-  B --> C
-  E --> F
-  G --> I
-  H --> I
-```
-
-Claude Code に mmm が出るのは、claude.ai と同じアカウントでログインしているときです。そうでなければ `claude mcp add --transport http --scope user mmm https://mmm.spheres.jp/mcp` で登録します。作業フォルダごとにマップが増えるので、多くのフォルダで使うなら無料プランの上限（マップ20個）に注意してください。
-
-### マップの形
 
 ```mermaid
 flowchart TD
