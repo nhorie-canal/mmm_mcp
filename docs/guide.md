@@ -4,7 +4,7 @@
 
 ## Keeping Your Maps Tidy
 
-Letting an AI agent write your maps is convenient, but left alone the maps tend to become hard to read. Paste the following into the instruction file your AI agent loads every time (for Claude Code, `~/.claude/CLAUDE.md`) to keep the writing style consistent:
+Letting an AI agent write your maps is convenient, but left alone the maps tend to become hard to read. Paste the following into the instructions your AI agent loads every time (for Claude Code, `~/.claude/CLAUDE.md`; for Claude on the web, desktop and mobile, **Settings → Profile → personal preferences**) to keep the writing style consistent and to get diagrams instead of long text:
 
 ```markdown
 ## How to write in mmm
@@ -15,6 +15,18 @@ Letting an AI agent write your maps is convenient, but left alone the maps tend 
   Create an element named "Docs" and put only the URL as its child.
 - Order reminder items chronologically. Name them by when to do them, such as
   "Right after release", "In 2 weeks", or "When X happens".
+- Do not write dates or deadlines in the text. Set them as a due date or start date
+  with `set_schedule`.
+
+## Show it as a diagram
+
+- When explaining a flow, steps, structure, relationships or state changes, show a
+  Mermaid diagram before the text.
+- Pick the diagram type by content (steps and branches: flowchart; exchanges: sequence
+  diagram; states: state diagram; schedules: Gantt). Use a table only for comparing
+  numbers and for lists.
+- When writing a plan, design or procedure into mmm, add a Markdown document
+  (`create_document`) with a Mermaid diagram alongside the elements.
 ```
 
 The reasons:
@@ -22,6 +34,8 @@ The reasons:
 - **One line per element**: Matryoshka shows elements nested inside each other, so long elements hurt readability and lose the benefit of drilling down through the hierarchy.
 - **Do not mix URLs with text**: A URL in the same element as other text is not treated as a link in the app, so tapping it does nothing.
 - **Chronological order**: Compared with ordering by task name, checking items off in order makes it easier to notice anything you missed.
+- **Dates as due/start dates**: A date in the text stays plain text. As a due or start date, the app highlights overdue items in red and today's in orange, and sends a notification as the due date approaches.
+- **Show it as a diagram**: You can see the flow or structure at a glance without rereading long text. A diagram in a Markdown document is drawn as a diagram in the app, and the AI can read it back and update it later.
 
 ## Managing Development Work
 
