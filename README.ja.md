@@ -16,14 +16,15 @@
 ```mermaid
 sequenceDiagram
   actor あなた
-  participant AI as いつもの AI
   participant M as mmm のマップ
-  あなた->>AI: 「今日の打ち合わせを TODO にして」
+  participant AI as いつもの AI
+  Note over あなた,AI: 文字の往復の代わりに、マップを介してやりとりする
+  あなた-)AI: ひとこと頼む「打ち合わせを TODO にして」
   AI->>M: 入れ子の TODO・図を書き込む
-  あなた->>M: アプリで見る・直す・チェック
-  あなた->>AI: 「残っている TODO は？」
-  AI->>M: 読み直す
-  AI-->>あなた: マップをもとに答える
+  M->>あなた: 図でひと目で見せる
+  あなた->>M: 直す・チェックする
+  M->>AI: あなたの直し・チェックを読み返す
+  AI->>M: 次の作業・図を書き足す
 ```
 
 ## はじめる

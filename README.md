@@ -16,14 +16,15 @@ English | [日本語](https://github.com/nhorie-canal/mmm_mcp/blob/main/README.j
 ```mermaid
 sequenceDiagram
   actor You
-  participant AI as Your AI
   participant M as Your mmm map
-  You->>AI: "Turn today's meeting into a to-do list"
+  participant AI as Your AI
+  Note over You,AI: Instead of long text back and forth, you work through the map
+  You-)AI: A short request: "Turn the meeting into to-dos"
   AI->>M: Writes nested to-dos and diagrams
-  You->>M: View, edit, check off in the app
-  You->>AI: "What's left?"
-  AI->>M: Reads the map again
-  AI-->>You: Answers from the map
+  M->>You: Shows it at a glance as a diagram
+  You->>M: Edit and check off
+  M->>AI: The AI reads your edits and checks
+  AI->>M: Adds the next tasks and diagrams
 ```
 
 ## Get started
