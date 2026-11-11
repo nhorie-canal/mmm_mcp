@@ -43,6 +43,7 @@ claude mcp add --transport http mmm https://mmm.spheres.jp/mcp
 
 Screen-by-screen steps, free-plan limits and how to disconnect are in the [setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md). The old local version (npx / .mcpb) has been stopped; remove it from your AI's settings and add the URL above instead.
 
+> [!IMPORTANT]
 > ### Connected? Next → [User guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.md)
 >
 > Paste the recommended instructions into your AI to get consistent maps, diagrams first, and real due dates. Troubleshooting is there too.

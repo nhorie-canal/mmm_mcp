@@ -43,6 +43,7 @@ claude mcp add --transport http mmm https://mmm.spheres.jp/mcp
 
 画面ごとの詳しい手順・無料プランの上限・接続の外し方は[セットアップ](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.ja.md)にあります。旧ローカル版（npx・.mcpb）は停止しました。AI の設定から削除し、上の手順で追加し直してください。
 
+> [!IMPORTANT]
 > ### つないだら、次はこれ → [使い方ガイド](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.ja.md)
 >
 > AI に推奨の指示文を貼ると、書き方がそろい、図で見せてくれて、日付は期日として付くようになります。よくあるトラブルもここにあります。

@@ -44,6 +44,7 @@ Claude Code の中で `/mcp` を開き、mmm を選んでブラウザでサイ�
 
 Streamable HTTP の MCP サーバーとして上の URL を登録します（OAuth に対応している必要があります。Claude 以外は動作を確かめていません）。
 
+> [!IMPORTANT]
 > ### つないだら、次はこれ → [使い方ガイド](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.ja.md)
 >
 > AI に推奨の指示文を貼ると、書き方がそろい、図で見せてくれて、日付は期日として付くようになります。
