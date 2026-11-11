@@ -26,8 +26,9 @@ You need a Matryoshka account linked to Google, Apple, or an email address (anon
    ```
    https://mmm.spheres.jp/mcp
    ```
-2. Press **Connect**. A browser window opens: sign in with the same account as the app and allow access.
-3. Talk to it:
+2. Leave Authentication ("Sign in now") and OAuth client ("Register automatically") as detected, and press **Add**.
+3. A browser window opens: sign in with the same account as the app. Back in Claude, confirm to finish connecting.
+4. Talk to it:
    - "Show me my mmm maps."
    - "Add a task called [task] to the [map name] map."
    - "Import these notes into the [map name] map."

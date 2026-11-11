@@ -15,15 +15,15 @@ Register a URL with your AI and sign in in the browser. No terminal and no Node.
 
 1. Open Claude and go to **Settings → Customize → Connectors**
 2. Choose **+ Add → Add custom connector**
-3. Enter `mmm` as the name, paste this URL, and press **Add**:
+3. Enter `mmm` as the name and paste this URL:
 
    ```
    https://mmm.spheres.jp/mcp
    ```
 
-4. Press **Connect** on the new mmm connector
-5. A browser window opens: sign in with the same account as the app (Google, Apple, or email) and press **Allow**
-6. Back in Claude, it is connected. The same connection also appears in the Claude mobile app
+4. Leave Authentication ("Sign in now") and OAuth client ("Register automatically") as detected, and press **Add**
+5. A browser window opens: sign in with the same account as the app (Google, Apple, or email)
+6. Back in Claude, confirm to finish connecting. It is now connected, and the same connection also appears in the Claude mobile app
 
 The same URL (with a copy button) and steps are in the app under My Page → "Connect to AI".
 
