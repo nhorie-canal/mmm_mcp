@@ -1,6 +1,6 @@
 {
   "name": "mmm-mcp-server",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "mcpName": "io.github.nhorie-canal/mmm-mcp-server",
   "description": "Matryoshka Mind Map の MCP のツール（リモート版 https://mmm.spheres.jp/mcp が使う）",
   "license": "MIT",
