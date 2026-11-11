@@ -5,6 +5,7 @@ English | [日本語](https://github.com/nhorie-canal/mmm_mcp/blob/main/README.j
 **Work with your AI in maps, not text.** Your usual AI, such as Claude, writes nested to-dos and Mermaid diagrams into [Matryoshka Mind Map](https://matryoshkamap.web.app). You look, edit and check things off in the app, and the AI reads your changes back.
 
 > **To get the most out of it → [User guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.md)**
+>
 > Recommended instructions to paste into your AI (consistent writing, diagrams first, due dates) and troubleshooting.
 
 ![Asking an AI agent to plan a trip fills a Matryoshka map, and "I booked the hotel" checks it off](https://raw.githubusercontent.com/nhorie-canal/mmm_mcp/main/docs/demo.gif)

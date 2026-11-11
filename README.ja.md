@@ -5,6 +5,7 @@
 **AIとのやりとりを、文字から図へ。** Claude などのいつもの AI が、[マトリョシカ マインドマップ](https://matryoshkamap.web.app)に入れ子の TODO や Mermaid の図を書き込みます。あなたはアプリで見て、直して、チェック。その結果を AI も読み返します。
 
 > **使いこなすには → [使い方ガイド](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/guide.ja.md)**
+>
 > AI に貼る推奨の指示文（書き方をそろえる・図で見せる・期日を付ける）と、よくあるトラブルをまとめています。
 
 ![AIエージェントに旅行の計画を頼むとマップが埋まり、「ホテルを予約した」でチェックが付く](https://raw.githubusercontent.com/nhorie-canal/mmm_mcp/main/docs/demo.gif)
