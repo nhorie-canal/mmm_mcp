@@ -76,65 +76,18 @@ AIエージェントとの開発で、タスクと資料の置き場所を Matry
 | 図を Mermaid で書く | アプリでも GitHub でも図として描かれ、AI があとから読んでも中身が分かります |
 | 聞かれたら読み直す | MCP は、アプリでの操作を自動では知りません |
 
-- MD 文書を作るには、MCP サーバー 0.4.0 以降とアプリ 5.3.0 以降が必要です（`update_document` で直すには 0.5.0 以降）
+- MD 文書を表示するには、アプリ 5.3.0 以降が必要です
 - 無料プランでは、1つのマップに置ける文書は3個までです
-
-## ローカル版を最新版にする
-
-リモート版（URL を登録して使う方法）は、サーバー側で更新されるので、何もする必要はありません。以下はローカル版（`.mcpb`・`npx`）を使っている方向けで、ローカル版は終了に向かっているため、[リモート版](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.ja.md)への移行をおすすめします。
-
-### Claude Desktop の拡張機能（.mcpb）で入れた場合
-
-最新の [mmm-mcp-server.mcpb](https://github.com/nhorie-canal/mmm_mcp/releases/latest/download/mmm-mcp-server.mcpb) をダウンロードします。Claude Desktop で Matryoshka Mind Map の拡張機能をアンインストールしてから、新しいファイルをダブルクリックしてインストールしてください。ログインし直す必要はありません。
-
-### `npx` で登録した場合
-
-[セットアップ](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.ja.md)の手順5の登録が `mmm-mcp-server@latest` になっていれば、AIエージェントを起動するたびに
-最新版が使われるので、何もする必要はありません。
-
-`@latest` の付いていない `npx -y mmm-mcp-server` で登録した方は、最初に取得した古い版を
-使い続けていることがあります。次のように登録を書き換えてください（ログインし直す必要は
-ありません）。
-
-#### Claude Codeを使っている場合
-
-登録を一度消してから、登録し直します。
-
-```bash
-claude mcp remove mmm
-```
-
-```bash
-claude mcp add mmm -- npx -y mmm-mcp-server@latest
-```
-
-`--scope user` で登録していた方は、消すときも登録するときも `--scope user` を付けます。
-
-```bash
-claude mcp remove mmm --scope user
-```
-
-```bash
-claude mcp add mmm --scope user -- npx -y mmm-mcp-server@latest
-```
-
-#### Claude Desktopを使っている場合
-
-`claude_desktop_config.json` の `"args"` を `["-y", "mmm-mcp-server@latest"]` に書き換えて保存し、
-Claude Desktopを再起動してください。
 
 ## よくあるトラブル
 
 | 症状 | 原因・対処 |
 |---|---|
-| `node --version`が「command not found」になる | [セットアップ](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.ja.md)の手順3のNode.jsインストールがまだ。インストール後、ターミナルを一度閉じて開き直す |
-| ログイン時に「パスワードが違います」と出る | [セットアップ](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.ja.md)の手順4の補足を参照。Google/Appleでログインし直してみる |
-| 話しかけてもマップ操作をしてくれない | [セットアップ](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.ja.md)の手順5の登録が正しいか確認する。Claude Desktopは登録後に再起動が必要 |
 | マップの中身を教えてくれない・確認だけで止まる | 「読んでいいですか」の確認に「はい」と答えているか確認する |
-| 「無料プランの上限」で書き込めない（リモート版） | 無料はマップ20個・1マップの要素300個・1マップの文書3個まで。別のマップに分けるか、アプリのマイページから有料プランにする（1か月無料）。有料プランなのに止まるときは、アプリのマイページに出ているのと同じアカウントで接続しているか確認する |
-| 「1日の呼び出し回数の上限」と出る（リモート版） | 1人1日1,000回まで。日本時間の朝9時にリセットされる |
-| 接続しようとするとサインインで断られる（リモート版） | 匿名のままのアカウントは接続できない。アプリのマイページでメール・Google・Apple を連携してから、もう一度接続する |
-| Claude でコネクタを追加できない（リモート版） | Claude の Free プランはカスタムコネクタを1つまで。使っていないコネクタを外す |
+| 「無料プランの上限」で書き込めない | 無料はマップ20個・1マップの要素300個・1マップの文書3個まで。別のマップに分けるか、アプリのマイページから有料プランにする（1か月無料）。有料プランなのに止まるときは、アプリのマイページに出ているのと同じアカウントで接続しているか確認する |
+| 「1日の呼び出し回数の上限」と出る | 1人1日1,000回まで。日本時間の朝9時にリセットされる |
+| 接続しようとするとサインインで断られる | 匿名のままのアカウントは接続できない。アプリのマイページでメール・Google・Apple を連携してから、もう一度接続する |
+| Claude でコネクタを追加できない | Claude の Free プランはカスタムコネクタを1つまで。使っていないコネクタを外す |
 | 大きなマップをAIが読み込めない | 要素が数百を超えると`list_elements`の応答が大きくなり、一度に受け取れないことがある。AIエージェントによっては、いったんファイルに保存して必要な部分だけ読む形で対応する。頻繁に起きるならマップを分ける（最上位の要素を左スワイプすると、配下ごと独立したマップになる） |
 
 ## 活用例（応用編）: フォルダ単位でタスクを自動記録する
@@ -154,14 +107,14 @@ Claude Desktopを再起動してください。
 
 ### 必要な設定
 
-**(1) mmmサーバーを全フォルダ共通で使えるように登録し直す**
+**(1) mmmサーバーを全フォルダ共通で使えるように登録する**
 
 Claude Codeに登録するとき、そのままだと今いるフォルダでしか
 `mmm`ツールが使えません。どのフォルダで`claude`を起動しても使えるように
 するには、`--scope user`を付けて登録します。
 
 ```bash
-claude mcp add mmm --scope user -- npx -y mmm-mcp-server@latest
+claude mcp add --transport http --scope user mmm https://mmm.spheres.jp/mcp
 ```
 
 **(2) グローバルのCLAUDE.md（`~/.claude/CLAUDE.md`）に運用ルールを書く**
@@ -207,19 +160,5 @@ claude mcp add mmm --scope user -- npx -y mmm-mcp-server@latest
 
 ## このツールについて
 
-### リモート版
-
 - AI が操作を依頼したときだけ、あなたのアカウントとして Firestore のマップを読み書きします。マップの中身はサーバーに保存せず、ログにも出しません
 - 接続の許可（アクセストークン）はハッシュにして保存し、アプリでアカウントを削除すると消えます
-
-### ローカル版（旧）
-
-- あなたのログイン情報（更新トークン）はあなたのパソコンの中
-  （macOSは`~/.config/mmm-mcp/credentials.json`、Windowsは
-  `C:\Users\<ユーザー名>\.config\mmm-mcp\credentials.json`）にのみ保存され、
-  他の場所には送信されません
-- マップの内容はあなたのFirebaseアカウントに直接読み書きされ、開発者を含む
-  第三者のサーバーを経由しません（Appleでログインする場合のみ、ログインの
-  最後の一手続きで署名専用の中継サーバーを経由しますが、あなたのマップの
-  中身は一切通りません）
-- 常時起動しているプロセスはなく、AIエージェントとの会話中だけ動作します

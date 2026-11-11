@@ -15,8 +15,8 @@ import type { ResolvedMap } from "../domain/mapResolver.js";
 const confirmedMaps = new Map<string, number>();
 
 /**
- * 確認済みの印を覚える時間。ローカル版は1会話＝1プロセスなのでプロセスが生きている間（既定）。
- * 常時動くリモート版は会話の区切りを知らないので、短い時間に設定し、利用者ごとに覚える。
+ * 確認済みの印を覚える時間（既定はプロセスが生きている間）。サーバーは会話の区切りを知らないので、
+ * mcp-remote が短い時間に設定し、利用者ごとに覚える。
  */
 let confirmationTtlMs = Number.POSITIVE_INFINITY;
 export function setConfirmationTtlMs(ms: number): void {

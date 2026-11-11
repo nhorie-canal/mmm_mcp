@@ -1,14 +1,14 @@
 // Claude とやり取りする期日・着手日の文字列(docs/schedule.md §3 MCP)。
 //   終日:   "2026-10-15"        UTC の0時として持ち、UTC の日付として書く
 //   時刻付き: "2026-10-15 09:00"  アプリで設定しているタイムゾーン（users/{uid}/private/profile の timeZone）の時刻。
-//                                 タイムゾーンが分からないときは MCP が動く PC の現地時刻
+//                                 タイムゾーンが分からないときはサーバーの時刻
 import type { ScheduleDate } from "./levels.js";
 
 const PATTERN = /^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}):(\d{2}))?$/;
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-/** IANA のタイムゾーン名として使えるか。使えない・未指定は undefined（PC の現地時刻）にする。 */
+/** IANA のタイムゾーン名として使えるか。使えない・未指定は undefined（サーバーの時刻）にする。 */
 export function validTimeZone(name: string | null | undefined): string | undefined {
   if (!name) return undefined;
   try {
@@ -27,7 +27,7 @@ interface Parts {
   mi: number;
 }
 
-/** [date] をそのタイムゾーンの壁時計に直す。未指定は PC の現地時刻。 */
+/** [date] をそのタイムゾーンの壁時計に直す。未指定はサーバーの時刻。 */
 export function zonedParts(date: Date, timeZone?: string): Parts {
   if (!timeZone) {
     return { y: date.getFullYear(), mo: date.getMonth() + 1, d: date.getDate(), h: date.getHours(), mi: date.getMinutes() };

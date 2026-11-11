@@ -49,7 +49,7 @@ Then open `/mcp` inside Claude Code, choose mmm, and sign in in the browser. For
 
 ### Using the old local version (npx / .mcpb)?
 
-The local version is being phased out. Please move to the remote version; the steps to switch, and the old local steps, are in the [setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md).
+The local version has been stopped. Remove the local mmm from your AI app's settings and add the remote version with the steps above. Your account data stays the same.
 
 ## Privacy
 

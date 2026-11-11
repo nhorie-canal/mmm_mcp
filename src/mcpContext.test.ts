@@ -68,3 +68,7 @@ test("runWithContext: 呼び出しごとに別の利用者として動き、混�
   );
   assert.deepEqual(results, ["a", "b", "c"]);
 });
+
+test("runWithContext の外では getContext が投げる（ほかの利用者の資格情報へ落ちない）", () => {
+  assert.throws(() => getContext(), /文脈がありません/);
+});

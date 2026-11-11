@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
-import type { AuthSession } from "../auth/session.js";
+import type { UserSession } from "../auth/session.js";
 import { FirestoreRestClient } from "./restClient.js";
 
 // fetch だけを手書きの偽物に差し替えて、commit に送る本文を見る(モックのライブラリは使わない)。
@@ -15,7 +15,7 @@ function clientCapturing(): { client: FirestoreRestClient; bodies: Array<{ write
     bodies.push(JSON.parse(init!.body!));
     return new Response("{}", { status: 200, headers: { "content-type": "application/json" } });
   }) as typeof fetch;
-  const session = { getValidIdToken: async () => "token" } as unknown as AuthSession;
+  const session = { getValidIdToken: async () => "token" } as unknown as UserSession;
   return { client: new FirestoreRestClient(session), bodies };
 }
 
@@ -49,7 +49,7 @@ test("runOptimistic: 書き込みが失敗したときは onWriteSucceeded を�
       status: 403,
       headers: { "content-type": "application/json" },
     })) as typeof fetch;
-  const session = { getValidIdToken: async () => "token" } as unknown as AuthSession;
+  const session = { getValidIdToken: async () => "token" } as unknown as UserSession;
   const client = new FirestoreRestClient(session);
   let called = 0;
   client.onWriteSucceeded = async () => {

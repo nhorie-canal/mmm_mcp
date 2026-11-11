@@ -6,7 +6,7 @@ export function mcpUsagePath(uid: string): string {
   return `users/${uid}/private/usage`;
 }
 
-/** アプリで設定しているタイムゾーン（無ければ PC の現地）の日付(YYYY-MM-DD)。 */
+/** アプリで設定しているタイムゾーン（無ければサーバーの時刻）の日付(YYYY-MM-DD)。 */
 export function localDayKey(now: Date, timeZone?: string): string {
   const p = zonedParts(now, timeZone);
   const y = String(p.y).padStart(4, "0");

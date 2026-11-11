@@ -49,7 +49,7 @@ claude mcp add --transport http mmm https://mmm.spheres.jp/mcp
 
 ### 旧ローカル版（npx・.mcpb）をお使いの方
 
-ローカル版は終了に向かっています。リモート版に移ってください。移る手順と、ローカル版の手順は[セットアップ](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.ja.md)にあります。
+ローカル版は停止しました。AI の設定からローカル版の mmm を削除し、上の手順でリモート版を追加してください。アカウントのデータはそのまま使えます。
 
 ## プライバシー
 

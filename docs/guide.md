@@ -69,61 +69,18 @@ The reasons:
 | Draw diagrams in Mermaid | Both the app and GitHub render them as diagrams, and an AI reading them later still understands the content |
 | Re-read when asked | The MCP server does not learn about changes made in the app on its own |
 
-- Creating Markdown documents requires MCP server 0.4.0 or later and app 5.3.0 or later (rewriting them with `update_document` requires 0.5.0 or later).
+- Showing Markdown documents requires app 5.3.0 or later
 - On the free plan, each map can hold up to 3 documents.
-
-## Updating the Local Version
-
-The remote version (the one you use by registering a URL) is updated on the server, so there is nothing to do. The rest of this section is for the local version (`.mcpb` or `npx`); the local version is being phased out, so we recommend moving to the [remote version](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md).
-
-### Claude Desktop extension (.mcpb)
-
-Download the latest [mmm-mcp-server.mcpb](https://github.com/nhorie-canal/mmm_mcp/releases/latest/download/mmm-mcp-server.mcpb). In Claude Desktop, uninstall the Matryoshka Mind Map extension, then double-click the new file and install it. You stay signed in.
-
-### Registered with `npx`
-
-If your registration in Step 5 of the [setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md) uses `mmm-mcp-server@latest`, the latest version is used every time your AI agent starts, so there is nothing to do.
-
-If you registered with `npx -y mmm-mcp-server` (without `@latest`), you may still be running the old version that was downloaded the first time. Update the registration as follows (you do not need to log in again).
-
-#### Claude Code
-
-Remove the registration, then register it again.
-
-```bash
-claude mcp remove mmm
-```
-
-```bash
-claude mcp add mmm -- npx -y mmm-mcp-server@latest
-```
-
-If you registered with `--scope user`, add `--scope user` to both commands.
-
-```bash
-claude mcp remove mmm --scope user
-```
-
-```bash
-claude mcp add mmm --scope user -- npx -y mmm-mcp-server@latest
-```
-
-#### Claude Desktop
-
-Change `"args"` in `claude_desktop_config.json` to `["-y", "mmm-mcp-server@latest"]`, save it, and restart Claude Desktop.
 
 ## Troubleshooting
 
 | Symptom | Cause / Solution |
 |---|---|
-| `node --version` says "command not found" | Node.js from Step 3 of the [setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md) is not installed yet. After installing, close the terminal and open it again. |
-| "Wrong password" when logging in | See the note in Step 4 of the [setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md). Try logging in with Google or Apple instead. |
-| The agent does not operate on your maps when asked | Check that the registration in Step 5 of the [setup guide](https://github.com/nhorie-canal/mmm_mcp/blob/main/docs/setup.md) is correct. Claude Desktop needs a restart after registration. |
 | The agent will not show map contents / stops at the confirmation | Check that you answered "yes" when asked for permission to read. |
-| "Free plan limit" blocks a write (remote version) | Free: 20 maps, 300 elements per map, 3 documents per map. Split into another map, or upgrade from My Page in the app (first month free). If it blocks you although you subscribed, check that you connected with the same account shown in My Page |
-| "Daily call limit" (remote version) | Up to 1,000 calls per person per day; resets at 00:00 UTC |
-| Sign-in is refused when connecting (remote version) | Anonymous-only accounts cannot connect. Link email, Google, or Apple from My Page in the app, then connect again |
-| Cannot add the connector in Claude (remote version) | Claude's Free plan allows one custom connector. Remove one you do not use |
+| "Free plan limit" blocks a write | Free: 20 maps, 300 elements per map, 3 documents per map. Split into another map, or upgrade from My Page in the app (first month free). If it blocks you although you subscribed, check that you connected with the same account shown in My Page |
+| "Daily call limit" | Up to 1,000 calls per person per day; resets at 00:00 UTC |
+| Sign-in is refused when connecting | Anonymous-only accounts cannot connect. Link email, Google, or Apple from My Page in the app, then connect again |
+| Cannot add the connector in Claude | Claude's Free plan allows one custom connector. Remove one you do not use |
 | The AI cannot load a large map | With several hundred elements or more, the `list_elements` response gets large and may not fit in one go. Some AI agents handle this by saving it to a file and reading only the parts they need. If it happens often, split the map (swiping left on a top-level element turns it and everything under it into a separate map). |
 
 ## Advanced Example: Recording Tasks per Folder Automatically
@@ -136,12 +93,12 @@ What follows is **just one example of how it can be used**. It is not a standard
 
 ### Setup
 
-**(1) Re-register the mmm server so it is available in every folder**
+**(1) Register the mmm server so it is available in every folder**
 
 When registering with Claude Code, the `mmm` tool is only available in the current folder by default. To use it no matter which folder you start `claude` in, register it with `--scope user`:
 
 ```bash
-claude mcp add mmm --scope user -- npx -y mmm-mcp-server@latest
+claude mcp add --transport http --scope user mmm https://mmm.spheres.jp/mcp
 ```
 
 **(2) Write the workflow rules in your global CLAUDE.md (`~/.claude/CLAUDE.md`)**
@@ -175,13 +132,5 @@ integration) and manage them in real time.
 
 ## About This Tool
 
-### Remote version
-
 - It reads and writes your maps in Firestore as you, only when your AI asks it to. It does not store map contents or write them to logs.
 - Access grants (access tokens) are stored only as hashes and are deleted when you delete your account.
-
-### Local version (old)
-
-- Your login credentials (refresh token) are stored only on your computer (macOS: `~/.config/mmm-mcp/credentials.json`, Windows: `C:\Users\<username>\.config\mmm-mcp\credentials.json`) and are never sent anywhere else.
-- Your map contents are read from and written to your Firebase account directly, without going through any third-party server, including the developer's (only when logging in with Apple, the last step of login goes through a signing-only relay server, but your map contents never pass through it).
-- There is no always-running process; it runs only while you are in a conversation with your AI agent.

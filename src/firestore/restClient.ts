@@ -9,8 +9,8 @@ import {
 } from "./valueCodec.js";
 
 // MMM_FIRESTORE_EMULATOR_HOST があるときだけエミュレータへ向ける（リモート版 MCP の検証用）。
-// 一般的な FIRESTORE_EMULATOR_HOST は読まない: npm で公開しているローカル版が、開発者のシェルに残った
-// その変数のせいで、本番の ID トークンを平文でエミュレータへ送ってしまわないように。
+// 一般的な FIRESTORE_EMULATOR_HOST は読まない: 開発者のシェルに残ったその変数のせいで、本番の ID トークンを
+// 平文でエミュレータへ送ってしまわないように。
 // リモート版の入口（mcp-remote）だけが、検証のときにこの名前を設定する。呼ぶたびに読む。
 function baseUrl(): string {
   const emulator = process.env.MMM_FIRESTORE_EMULATOR_HOST;
