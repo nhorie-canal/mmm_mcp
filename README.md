@@ -2,7 +2,7 @@
 
 English | [日本語](https://github.com/nhorie-canal/mmm_mcp/blob/main/README.ja.md)
 
-Talk to your AI agent, and it reads and writes your nested mind maps and TODOs in [Matryoshka Mind Map](https://matryoshkamap.web.app).
+**Work with your AI in maps, not text.** Instead of scrolling back through a long chat, your AI agent (such as Claude) writes nested to-dos and Mermaid diagrams into [Matryoshka Mind Map](https://matryoshkamap.web.app). You see them at a glance in the app, edit, and check them off, and your AI reads your changes back.
 
 ![Asking an AI agent to plan a trip fills a Matryoshka map, and "I booked the hotel" checks it off](https://raw.githubusercontent.com/nhorie-canal/mmm_mcp/main/docs/demo.gif)
 

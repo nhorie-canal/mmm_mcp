@@ -2,7 +2,7 @@
 
 [English](https://github.com/nhorie-canal/mmm_mcp/blob/main/README.md) | 日本語
 
-AIエージェントに話しかけるだけで、[マトリョシカ マインドマップ](https://matryoshkamap.web.app)の入れ子のマインドマップとTODOを読み書きできます。
+**AIとのやりとりを、文字から図へ。** 長い会話を読み返す代わりに、Claude などのいつもの AI エージェントが[マトリョシカ マインドマップ](https://matryoshkamap.web.app)に入れ子の TODO や Mermaid の図を書き込みます。あなたはアプリでひと目で見て、直して、チェック。あなたが直した内容は AI も読み返します。
 
 ![AIエージェントに旅行の計画を頼むとマップが埋まり、「ホテルを予約した」でチェックが付く](https://raw.githubusercontent.com/nhorie-canal/mmm_mcp/main/docs/demo.gif)
 
