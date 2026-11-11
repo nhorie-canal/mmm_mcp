@@ -13,10 +13,10 @@ Letting an AI agent write your maps is convenient, but left alone the maps tend 
   If you want to keep reasons or notes, put them one level down as child elements.
 - Put a URL in its own element. Do not mix it with text like "Docs here: https://...".
   Create an element named "Docs" and put only the URL as its child.
-- Order reminder items chronologically. Name them by when to do them, such as
-  "Right after release", "In 2 weeks", or "When X happens".
-- Do not write dates or deadlines in the text. Set them as a due date or start date
-  with `set_schedule`.
+- Order reminder items by when to do them. If an item has a date, do not write it
+  in the text; set it as a due date or start date with `set_schedule`. Only triggers
+  without a date ("Right after release", "When X happens") become the name of a
+  parent element, with the items under it.
 
 ## Show it as a diagram
 
@@ -33,8 +33,8 @@ The reasons:
 
 - **One line per element**: Matryoshka shows elements nested inside each other, so long elements hurt readability and lose the benefit of drilling down through the hierarchy.
 - **Do not mix URLs with text**: A URL in the same element as other text is not treated as a link in the app, so tapping it does nothing.
-- **Chronological order**: Compared with ordering by task name, checking items off in order makes it easier to notice anything you missed.
-- **Dates as due/start dates**: A date in the text stays plain text. As a due or start date, the app highlights overdue items in red and today's in orange, and sends a notification as the due date approaches.
+- **Order by when to do them**: Compared with ordering by task name, checking items off in order makes it easier to notice anything you missed.
+- **Dates as due/start dates**: A date in the text stays plain text. As a due or start date, the app highlights overdue items in red and today's in orange, and sends a notification as the due date approaches. Triggers without a date cannot be a date, so they become the name of a parent element.
 - **Show it as a diagram**: You can see the flow or structure at a glance without rereading long text. A diagram in a Markdown document is drawn as a diagram in the app, and the AI can read it back and update it later.
 
 ## Managing Development Work
