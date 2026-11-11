@@ -56,6 +56,37 @@ Showing Markdown documents requires app 5.3.0 or later. The free plan allows 3 d
 
 Keep one map per working folder and let the AI record the tasks and notes that come up. Paste this in addition to section 1.
 
+### Getting to this setup
+
+```mermaid
+flowchart TD
+  subgraph S1["1. Prepare"]
+    A[Get the app<br/>web, iPhone, Android] --> B[Link your account to<br/>Google, Apple or email]
+  end
+  subgraph S2["2. Connect (once)"]
+    C[In claude.ai, Settings → Customize → Connectors,<br/>add https://mmm.spheres.jp/mcp] --> D[Sign in in the browser with<br/>the same account as the app]
+    D --> E[mmm works in Claude web, desktop,<br/>mobile and Claude Code]
+  end
+  subgraph S3["3. Paste the instructions (once)"]
+    F[Copy section 1 of this guide<br/>and Task management below] --> G[Claude Code:<br/>~/.claude/CLAUDE.md]
+    F --> H[Claude app:<br/>Settings → Profile → personal preferences]
+  end
+  subgraph S4["4. Every day"]
+    I[Start Claude Code<br/>in a working folder] --> J[Claude records tasks, diagrams<br/>and due dates in the folder's map]
+    J --> K[View, edit and check off<br/>in the app on your phone]
+    K --> L[Claude reads the map back<br/>and moves on]
+    L --> J
+  end
+  B --> C
+  E --> F
+  G --> I
+  H --> I
+```
+
+mmm shows up in Claude Code when it is signed in with the same account as claude.ai. Otherwise, register it with `claude mcp add --transport http --scope user mmm https://mmm.spheres.jp/mcp`. A map is created per working folder, so mind the free-plan limit (20 maps) if you use many folders.
+
+### Shape of the map
+
 ```mermaid
 flowchart TD
   F[Working folder] -- same name --> M[To-do map]

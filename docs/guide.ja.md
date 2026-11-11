@@ -51,6 +51,37 @@ MD 文書の表示にはアプリ 5.3.0 以降が要ります。無料プラン�
 
 作業フォルダごとにマップを1つ持ち、出てきたタスクと資料を AI に記録させる使い方です。「1. 推奨の指示文」に加えて貼ります。
 
+### この使い方になるまで
+
+```mermaid
+flowchart TD
+  subgraph S1["1. 準備"]
+    A[アプリを入れる<br/>Web・iPhone・Android] --> B[アカウントを<br/>Google・Apple・メールに連携]
+  end
+  subgraph S2["2. つなぐ（1回だけ）"]
+    C[claude.ai の 設定 → カスタマイズ → コネクタ に<br/>https://mmm.spheres.jp/mcp を追加] --> D[ブラウザでアプリと同じ<br/>アカウントにサインイン]
+    D --> E[Web・Desktop・スマホ・Claude Code の<br/>すべてで mmm が使える]
+  end
+  subgraph S3["3. 指示を貼る（1回だけ）"]
+    F[このガイドの<br/>1. 推奨の指示文 と<br/>下の 作業の管理 をコピー] --> G[Claude Code:<br/>~/.claude/CLAUDE.md]
+    F --> H[Claude アプリ:<br/>設定 → プロフィールの個人設定]
+  end
+  subgraph S4["4. 毎日の使い方"]
+    I[作業フォルダで<br/>Claude Code を起動] --> J[Claude がフォルダ名のマップに<br/>タスク・図・期日を記録]
+    J --> K[スマホのアプリで<br/>見る・直す・チェック]
+    K --> L[Claude がマップを読み返して<br/>次の作業へ]
+    L --> J
+  end
+  B --> C
+  E --> F
+  G --> I
+  H --> I
+```
+
+Claude Code に mmm が出るのは、claude.ai と同じアカウントでログインしているときです。そうでなければ `claude mcp add --transport http --scope user mmm https://mmm.spheres.jp/mcp` で登録します。作業フォルダごとにマップが増えるので、多くのフォルダで使うなら無料プランの上限（マップ20個）に注意してください。
+
+### マップの形
+
 ```mermaid
 flowchart TD
   F[作業フォルダ] -- 同じ名前 --> M[TODO マップ]
