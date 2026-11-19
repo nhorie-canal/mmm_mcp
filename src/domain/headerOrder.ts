@@ -29,6 +29,8 @@ export function prependedHeaderOrders(entries: HeaderOrderEntry[]): HeaderOrderE
 /**
  * create_map の書き込み一式。既存の自分のマップを2..n+1に振り直し、新しいマップを
  * order 1 で作る。order を持たないマップは一覧に出ないので触らない。
+ * 新しいマップは AI の読み取りを「常に許可」で作る(AI が自分で作った空のマップなので毎回の確認は要らない)。
+ * 既存のマップの aiReadPermission は書き換えない。
  * 振り直しは読んだ時点の updateTime を前提条件にする(読んだ後に別の端末で消された
  * マップを、order だけのドキュメントとして作り直さないため)。
  */
@@ -52,7 +54,7 @@ export function buildCreateMapWrites(
       fields: { order: s.order },
       requireUpdateTime: updateTimes.get(s.id),
     })),
-    { path: headerPath, fields: { title, order: 1, isTodo, editors: [], viewers: [] } },
+    { path: headerPath, fields: { title, order: 1, isTodo, editors: [], viewers: [], aiReadPermission: "allow" } },
     { path: `${headerPath}/levels/root`, fields: { children: [] } },
   ];
 }

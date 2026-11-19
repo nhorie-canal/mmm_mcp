@@ -75,7 +75,7 @@ test("buildCreateMapWrites: 既存を振り直し、新しいマップを order 
   assert.deepEqual(writes, [
     { path: "users/u/headers/a", fields: { order: 2 }, requireUpdateTime: "t-a" },
     { path: "users/u/headers/b", fields: { order: 3 }, requireUpdateTime: "t-b" },
-    { path: "users/u/headers/new", fields: { title: "題", order: 1, isTodo: true, editors: [], viewers: [] } },
+    { path: "users/u/headers/new", fields: { title: "題", order: 1, isTodo: true, editors: [], viewers: [], aiReadPermission: "allow" } },
     { path: "users/u/headers/new/levels/root", fields: { children: [] } },
   ]);
 });
